@@ -44,7 +44,10 @@ namespace Ceres
     /// <param name="args"></param>
     static void Main(string[] args)
     {
-      LaunchUCI(args);
+      Ceres.Chess.MoveGen.Test.MGMoveGenTest.Test();
+      Console.WriteLine("Done!");
+      return;
+      //LaunchUCI(args);
     }
 
 

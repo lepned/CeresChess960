@@ -16,7 +16,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 using Ceres.Base.Misc;
+using Ceres.Chess.MoveGen;
+using Ceres.Chess.MoveGen.Converters;
 using static Ceres.Chess.PieceType;
 using static Ceres.Chess.SideType;
 
@@ -56,6 +59,23 @@ namespace Ceres.Chess.Textual
       }
     }
 
+    public static int CharToNumber(char c, bool white)
+    {
+      char lowerCase = char.ToLower(c);
+      char baseChar = 'a';
+      int file = 7 - (lowerCase - baseChar);
+
+      if (white)
+      {
+        return file;
+      }
+      else
+      {
+        return 56 + file;
+      }
+    }
+
+
     /// <summary>
     /// Worker method to do FEN parsing.
     /// NOTE: performance could be improved by passing in the Piece[] preallocated
@@ -74,6 +94,10 @@ namespace Ceres.Chess.Textual
 
       int curRank = 0;
       int curFile = 0;
+      //(int,int) wKing;
+      //(int,int) bKing;
+      //(int, int) wRooks;
+      //(int, int) bRooks;
 
       // Parse pieces
       while (true)
@@ -96,6 +120,14 @@ namespace Ceres.Chess.Textual
         else
         {
           Piece thisPiece = byteToPieces[thisChar];
+          //if (thisPiece.Type == PieceType.King && char.IsUpper(thisChar))
+          //  wKing = (curFile,curRank);
+          //else if (thisPiece.Type == PieceType.King && char.IsLower(thisChar))
+          //  bKing = (curFile, curRank);
+          //else if (thisPiece.Type == PieceType.Rook && char.IsUpper(thisChar))
+          //  wRooks = (curFile, curRank);
+          //else if (thisPiece.Type == PieceType.Rook && char.IsLower(thisChar))
+          //  bRooks = (curFile, curRank);
           if (thisPiece.Type == PieceType.None) throw new Exception("Illegal FEN, found piece character " + thisChar);
           pieces.Add(new PieceOnSquare(Square.FromFileAndRank(curFile, 7 - curRank), thisPiece));
           curFile++;
@@ -117,24 +149,159 @@ namespace Ceres.Chess.Textual
       SkipAnySpaces();
 
       // 3. Castling availability
+
+        // 3. Castling availability
       bool whiteCanOO = false;
       bool whiteCanOOO = false;
       bool blackCanOO = false;
       bool blackCanOOO = false;
-      while (charIndex < fen.Length)
+
+      bool isChess960 = false;
+
+      // Extract the castling rights portion from the FEN string
+      int nextSpaceIndex = fen.IndexOf(' ', charIndex);
+      string castlingRights;
+
+      if (nextSpaceIndex != -1)
       {
-        char thisChar = fen[charIndex++];
-        if (thisChar == 'K' || thisChar == 'H')
-          whiteCanOO = true;
-        else if (thisChar == 'Q' || thisChar == 'A')
-          whiteCanOOO = true;
-        else if (thisChar == 'k' || thisChar == 'h')
-          blackCanOO = true;
-        else if (thisChar == 'q' || thisChar == 'a')
-          blackCanOOO = true;
-        else if (thisChar == ' ')
-          break;
+        // There is a space, so extract the substring up to that space
+        castlingRights = fen.Substring(charIndex, nextSpaceIndex - charIndex);
       }
+      else
+      {
+        // No space found, assume castling rights go to the end of the FEN string
+        castlingRights = fen.Substring(charIndex);
+      }
+
+      // Only proceed if there are castling rights specified (i.e., the string is not "-")
+      if (castlingRights != "-")
+      {
+        // Check if castling rights contain any non-standard chess characters
+        isChess960 = castlingRights.IndexOfAny(new char[] { 'K', 'Q', 'k', 'q' }) == -1;
+                
+        MGPosition pos = default;
+        Square whiteKingSquare = default;
+        Square blackKingSquare = default;
+        List<Square> whiteRookSquares = new List<Square>();
+        List<Square> blackRookSquares = new List<Square>();
+
+        foreach (PieceOnSquare ps in pieces)
+        {
+          var mgPiece = MGChessPositionConverter.MGPieceFromPiece(ps.Piece);
+          var mgSquare = MGPosition.MGBitBoardFromSquare(ps.Square);
+          pos.SetPieceAtBitboardSquare((ulong)mgPiece, mgSquare);
+
+          // Identify king and rook positions
+          if (ps.Piece.Type == PieceType.King)
+          {
+            if (ps.Piece.Side == SideType.White)
+              whiteKingSquare = ps.Square;
+            else
+              blackKingSquare = ps.Square;
+          }
+          else if (ps.Piece.Type == PieceType.Rook)
+          {
+            if (ps.Piece.Side == SideType.White)
+              whiteRookSquares.Add(ps.Square);
+            else
+              blackRookSquares.Add(ps.Square);
+          }
+        }
+        
+        ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & QBBoperations.firstRank;        
+        int whiteKingSq = (int)QBBoperations.LSB(wKing);
+        ulong bKing = (pos.D & pos.C & pos.B & pos.A) & QBBoperations.lastRank;
+        int blackKingSq = (int)QBBoperations.LSB(bKing);
+        ulong wRooks = ~pos.D & pos.C & ~pos.B & ~pos.A; //& QBBoperations.firstRank;
+        ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A); //& QBBoperations.lastRank;
+        //var kPiece = MGChessPositionConverter.PieceAt(in pos, kingSq);
+        int wRookLongSq = (int)(QBBoperations.MSB(wRooks & QBBoperations.firstRank));
+        int wRookShortSq = (int)(QBBoperations.LSB(wRooks & QBBoperations.firstRank));
+        //var kPiece = MGChessPositionConverter.PieceAt(in pos, kingSq);
+        int bRookLongSq = (int)(QBBoperations.MSB(bRooks & QBBoperations.lastRank));
+        int bRookShortSq = (int)(QBBoperations.LSB(bRooks & QBBoperations.lastRank));
+        
+        // Variables to hold the rook positions
+        char whiteKingSideRook = ' ';
+        char whiteQueenSideRook = ' ';
+        char blackKingSideRook = ' ';
+        char blackQueenSideRook = ' ';
+
+        // If it's Chess960, assign the rooks based on castling rights
+        if (isChess960)
+        {          
+          foreach (char c in castlingRights)
+          {
+            var color = Char.IsUpper(c);
+            var curRookPlacement = CharToNumber(c, color);
+            if (char.IsUpper(c)) // White's castling rights
+            {
+              var shortCastling = wRookShortSq < whiteKingSq && wRookShortSq == curRookPlacement;
+              var longCastling = wRookLongSq > whiteKingSq && wRookLongSq == curRookPlacement;
+              if (shortCastling) // Assign the first character as king-side rook
+                whiteKingSideRook = c;
+              else if (longCastling)
+                whiteQueenSideRook = c; // The second character as queen-side rook
+            }
+            else if (char.IsLower(c)) // Black's castling rights
+            {
+              var shortCastling = bRookShortSq < blackKingSq && bRookShortSq == curRookPlacement;
+              var longCastling = bRookLongSq > blackKingSq && bRookLongSq == curRookPlacement;
+              if (shortCastling) // Assign the first character as king-side rook
+                blackKingSideRook = c;
+              else if (longCastling)
+                blackQueenSideRook = c; // The second character as queen-side rook
+            }
+          }
+        }
+        else
+        {
+          // Standard chess rook positions (for completeness)
+          whiteKingSideRook = 'H';
+          whiteQueenSideRook = 'A';
+          blackKingSideRook = 'h';
+          blackQueenSideRook = 'a';
+        }
+
+        // Process the castling rights in the FEN string
+        foreach (char thisChar in castlingRights)
+        {
+          if (thisChar == 'K' || thisChar == whiteKingSideRook)
+            whiteCanOO = true;
+          else if (thisChar == 'Q' || thisChar == whiteQueenSideRook)
+            whiteCanOOO = true;
+          else if (thisChar == 'k' || thisChar == blackKingSideRook)
+            blackCanOO = true;
+          else if (thisChar == 'q' || thisChar == blackQueenSideRook)
+            blackCanOOO = true;
+        }
+
+        charIndex += castlingRights.Length;
+      }
+
+
+
+
+      // 3. Castling availability
+
+      //bool whiteCanOO = false;
+      //bool whiteCanOOO = false;
+      //bool blackCanOO = false;
+      //bool blackCanOOO = false;
+      //while (charIndex < fen.Length)
+      //{
+      //  char thisChar = fen[charIndex++];
+      //  if (thisChar == 'K' || thisChar == 'H')
+      //    whiteCanOO = true;
+      //  else if (thisChar == 'Q' || thisChar == 'A')
+      //    whiteCanOOO = true;
+      //  else if (thisChar == 'k' || thisChar == 'h')
+      //    blackCanOO = true;
+      //  else if (thisChar == 'q' || thisChar == 'a')
+      //    blackCanOOO = true;
+      //  else if (thisChar == ' ')
+      //    break;
+      //}
 
       SkipAnySpaces();
 

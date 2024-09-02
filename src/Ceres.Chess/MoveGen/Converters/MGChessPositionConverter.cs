@@ -207,11 +207,44 @@ namespace Ceres.Chess.MoveGen.Converters
     {
       FENParseResult fenParsed = FENParser.ParseFEN(fen);
 
-      MGPosition pos = default;
+      MGPosition pos = default;     
+      Square whiteKingSquare = default;
+      Square blackKingSquare = default;
+      List<Square> whiteRookSquares = new List<Square>();
+      List<Square> blackRookSquares = new List<Square>();
+
       foreach (PieceOnSquare ps in fenParsed.Pieces)
       {
-        pos.SetPieceAtBitboardSquare((ulong)MGPieceFromPiece(ps.Piece), MGPosition.MGBitBoardFromSquare(ps.Square));
+        var mgPiece = MGPieceFromPiece(ps.Piece);
+        var mgSquare = MGPosition.MGBitBoardFromSquare(ps.Square);
+        pos.SetPieceAtBitboardSquare((ulong)mgPiece, mgSquare);
+
+        // Identify king and rook positions
+        if (ps.Piece.Type == PieceType.King)
+        {
+          if (ps.Piece.Side == SideType.White)
+            whiteKingSquare = ps.Square;
+          else
+            blackKingSquare = ps.Square;
+        }
+        else if (ps.Piece.Type == PieceType.Rook)
+        {
+          if (ps.Piece.Side == SideType.White)
+            whiteRookSquares.Add(ps.Square);
+          else
+            blackRookSquares.Add(ps.Square);
+        }
       }
+
+      // Check if the position is Chess960
+      if (whiteKingSquare != Square.FromFileAndRank(4, 0) || blackKingSquare != Square.FromFileAndRank(4, 7) ||
+          !whiteRookSquares.Contains(Square.FromFileAndRank(0, 0)) || !whiteRookSquares.Contains(Square.FromFileAndRank(7, 0)) ||
+          !blackRookSquares.Contains(Square.FromFileAndRank(0, 7)) || !blackRookSquares.Contains(Square.FromFileAndRank(7, 7)))
+      {
+        pos.IsChess960 = true;
+      }
+
+
 
       pos.Rule50Count = fenParsed.MiscInfo.Move50Count;
       pos.MoveNumber = fenParsed.MiscInfo.MoveNum;
@@ -234,7 +267,7 @@ namespace Ceres.Chess.MoveGen.Converters
 #if MG_USE_HASH
       pos.CalculateHash();
 #endif
-
+      //QBBoperations.CanBlackKingReachLongRook(pos);
       return pos;
     }
 
@@ -244,7 +277,7 @@ namespace Ceres.Chess.MoveGen.Converters
     /// <param name="piece"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static int MGPieceFromPiece(Piece piece)
+    public static int MGPieceFromPiece(Piece piece)
       => piece.Side == SideType.White
                      ? PieceMapWhite[(int)piece.Type]
                      : PieceMapBlack[(int)piece.Type];
