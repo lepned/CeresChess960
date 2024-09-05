@@ -125,7 +125,6 @@ namespace Ceres.Chess.MoveGen
 
     public static bool CanBlackKingMoveToCastlingPos(in MGPosition pos, int kingSq, int rookSq, int startSquare, int endSquare, bool moveLeft)
     {
-      ulong whitePieces = pos.A & pos.B & pos.C & ~pos.D;
       ulong rook = 1UL << rookSq;
       ulong maskRook = ~rook;
       //remove the rook from the board
@@ -133,6 +132,7 @@ namespace Ceres.Chess.MoveGen
       ulong B = pos.B & maskRook;
       ulong C = pos.C & maskRook;
       ulong D = pos.D & maskRook;
+     
       ulong kingStart = 1UL << kingSq;
       ulong moveKing = moveLeft ? kingStart << 1 : kingStart >> 1;
 
@@ -140,24 +140,16 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        BitBoard BlackKing = A & B & C & D;
-        //Console.WriteLine($"Black king: {BlackKing}");
-        //write A, B, C, D to the console
-        //Console.WriteLine($"\nA: {A} B: {B} C: {C} D: {D}");
-        var inCheck = MGMoveGen.IsBlackInCheck(A, B, C, D);
+        BitBoard BlackKing = A & B & C & D;       
+        bool inCheck = MGMoveGen.IsBlackInCheck(A, B, C, D);
         if (inCheck)
-        {
-          //var b = pos.BoardString;
-          //Console.WriteLine(b);
+        {          
           return false;
         }
-        //string b = pos.BoardString;
-        //Console.WriteLine(b);
-        //need to check if there is a piece on the castling square - bug now!
 
         ulong mask = ~kingStart;
 
-        kingStart = moveKing; //moveLeft ? kingStart << 1 : kingStart >> 1;
+        kingStart = moveKing;
 
         // Create a mask that clears the target position and then sets the new king position
         int kingSqNew = moveLeft ? kingSq + 1 : kingSq - 1;
@@ -166,18 +158,23 @@ namespace Ceres.Chess.MoveGen
         A = (A & mask) | moveKing;
         B = (B & mask) | moveKing;
         C = (C & mask) | moveKing;
-        D = (D & mask) | moveKing;
-        //A |= (BitBoard)((moveKing & 1) << kingSqNew);
-        //B |= (BitBoard)((moveKing & 2) << kingSqNew);
-        //C |= (BitBoard)((moveKing & 4) << kingSqNew);
-        //D |= (BitBoard)((moveKing & 8) << kingSqNew);
-        //To = moveLeft ? To << 1 : To >> 1;
+        D = (D & mask) | moveKing;       
         moveKing = moveLeft ? kingStart << 1 : kingStart >> 1;
         start++;
       }
 
       return true;
     }
+
+    //create a function that write text to a text file
+    //public static void WriteToFile(string text)
+    //{
+    //  //string path = "C:\\Users\\david\\source\\repos\\Ceres\\Ceres.Chess.MoveGen\\bin\\Debug\\net5.0\\text.txt";
+    //  string path = "C:/Dev/Chess/castleCeres.txt";
+    //  System.IO.File.AppendAllText(path, text);
+    //}
+
+    //static int counter = 0;
 
     public static bool CanWhiteKingMoveToCastlingPos(in MGPosition pos, int kingSq, int rookSq, int startSquare, int endSquare, bool moveLeft)
     {
@@ -198,20 +195,13 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        BitBoard WhiteKing = A & B & C & ~D;
-        //Console.WriteLine($"\nWhiteKing: {WhiteKing}");
-        //write A, B, C, D to the console
-        //Console.WriteLine($"\nA: {A} B: {B} C: {C} D: {D}");
+        BitBoard WhiteKing = A & B & C & ~D;        
         var inCheck = MGMoveGen.IsWhiteInCheck(A, B, C, D);
         if (inCheck)
-        {
-          //var b = pos.BoardString;
-          //Console.WriteLine(b);
+        {          
           return false;
         }
-        //string b = pos.BoardString;
-        //Console.WriteLine(b);
-        //need to check if there is a piece on the castling square - bug now!
+       
         ulong mask = ~kingStart; //| moveKing;
 
         kingStart = moveKing; //moveLeft ? kingStart << 1 : kingStart >> 1;
@@ -223,30 +213,21 @@ namespace Ceres.Chess.MoveGen
         A = (A & mask) | moveKing;
         B = (B & mask) | moveKing;
         C = (C & mask) | moveKing;
-        //D = (D & mask) | moveKing;      
-
-        //ulong white = (A | B | C) & ~pos.D;        
-        //Console.WriteLine(white);
-
+      
         moveKing = moveLeft ? kingStart << 1 : kingStart >> 1;
         start++;
       }
+     
       return true;
     }
 
     public static bool CanBlackKingReachLongRook(in MGPosition pos)
-    {
-      if (pos.BlackCanCastleLong == false)
-      {
-        return false;
-      }
+    {      
       var occ = pos.A | pos.B | pos.C;
       ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
       int kingSq = (int)LSB(bKing);
       ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
-      //var kPiece = MGChessPositionConverter.PieceAt(in pos, kingSq);
       int rookSq = (int)(MSB(bRooks));
-
 
       if (bKing == 0 || bRooks == 0UL || kingSq > rookSq)
       {
@@ -269,32 +250,24 @@ namespace Ceres.Chess.MoveGen
           result = CanBlackKingMoveToCastlingPos(pos, kingSq, rookSq, kingSq, 61, true);
         }
 
-
         return result;
       }
 
       return false;
     }
 
-
     public static bool CanWhiteKingReachLongRook(in MGPosition pos)
-    {
-      if (pos.WhiteCanCastleLong == false)
-      {
-        return false;
-      }
+    {      
       var occ = pos.A | pos.B | pos.C;  // Occupation(pos);
       ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank;
       int kingSq = (int)LSB(wKing);
-      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;
+      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;      
+      int rookSq = (int)MSB((wRooks & firstRank));      
 
-
-      if (wRooks == 0UL)
+      if (wKing == 0 || wRooks == 0UL || kingSq > rookSq)
       {
         return false;
-      }
-
-      int rookSq = (int)MSB((wRooks & firstRank));
+      }      
 
       ulong occRow1WithoutKingAndRook = occ & firstRank & ~(1UL << kingSq | 1UL << rookSq);
       var v = LongRookKingMask[rookSq, kingSq];
@@ -318,12 +291,7 @@ namespace Ceres.Chess.MoveGen
     }
 
     public static bool CanBlackKingReachShortRook(in MGPosition pos)
-    {
-      if (pos.BlackCanCastle == false)
-      {
-        return false;
-      }
-
+    {      
       ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
       int kingSq = (int)LSB(bKing);
       ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
@@ -340,28 +308,23 @@ namespace Ceres.Chess.MoveGen
       var canCastle = v & occRow1WithoutKingAndRook;
 
       if (canCastle == 0UL)
-      {
-        int castlingSq = 57;
-        bool result = CanBlackKingMoveToCastlingPos(pos, kingSq, rookSq, castlingSq, kingSq, false);
+      {        
+        bool result = CanBlackKingMoveToCastlingPos(pos, kingSq, rookSq, 57, kingSq, false);
         return result;
       }
+      
       return false;
     }
 
     public static bool CanWhiteKingReachShortRook(in MGPosition pos)
-    {
-      if (pos.WhiteCanCastle == false)
-      {
-        return false;
-      }
+    {     
       var occ = pos.A | pos.B | pos.C;
       ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank; // pos.B & pos.C; //GetKings(pos.A, pos.B, pos.C, pos.D);
       int kingSq = (int)LSB(wKing);
-      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;
-      var kPiece = MGChessPositionConverter.PieceAt(in pos, kingSq);
-      int rookSq = (int)(LSB(wRooks) & firstRank);
+      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;      
+      int rookSq = (int)(LSB(wRooks));
 
-      if (wKing == 0 && wRooks == 0UL || kingSq < rookSq)
+      if (wKing == 0 || wRooks == 0UL || kingSq < rookSq)
       {
         return false;
       }
@@ -370,11 +333,10 @@ namespace Ceres.Chess.MoveGen
       var v = ShortRookKingMask[rookSq, kingSq];
       var canCastle = v & occRow1WithoutKingAndRook;
       if (canCastle == 0UL)
-      {
-        int castlingSq = 1;
-        bool result = CanWhiteKingMoveToCastlingPos(pos, kingSq, rookSq, castlingSq, kingSq, false);
-        return result;
+      {        
+        return CanWhiteKingMoveToCastlingPos(pos, kingSq, rookSq, 1, kingSq, false);         
       }
+     
       return false;
     }
 

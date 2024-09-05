@@ -268,14 +268,13 @@ namespace Ceres.Chess.MoveGen.Test
 
     public static void RunChess960Verification(int depth)
     {
-      var path = "C:/Dev/Chess/Chess960.txt";
+      var path = "C:/Dev/Chess/Chess960.txt"; //
       var records = ParseFile(path);
       var ordered = records.OrderBy(r => GetDepthValue(depth, r));
       //RunPerftOnPosition("bbqrnnkr/1ppp1p1p/5p2/p5p1/P7/1P4P1/2PPPP1P/1BQRNNKR w HDhd - 0 9", 2, (ulong)23);
 
       foreach (var record in ordered)
-      {
-        //write record position number to console with text position number and FEN
+      {        
         Console.WriteLine($"Position Number: {record.PositionNumber}");
         var perftDepth = GetDepthValue(depth, record);
         RunPerftWithStatsOnPosition(record.FEN, depth, (ulong)perftDepth);
@@ -285,14 +284,18 @@ namespace Ceres.Chess.MoveGen.Test
 
     public static void RunPerftSuite()
     {
+      RunChess960Verification(4);
       Console.WriteLine("Running PERFT Test Suite\n\n");
       //chess960 test
       //RunPerftOnPosition("qbb1rkrn/1ppppppp/p7/7n/8/P2P4/1PP1PPPP/QBBRNKRN w Gg - 0 9", 2, 547);
       //RunPerftOnPosition("bbr1qk1n/1ppppp1p/2n5/p7/P7/1P2P3/2PP1PrP/1BRNQKRN w GCc - 0 9", 2, 520);
-      RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 1, 48);
-      RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 2, 2039);      
-      RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 3, 97862);
-      RunPerftWithStatsOnPosition("b1q1rrkb/pppppppp/3nn3/8/P7/1PPP4/4PPPP/BQNNRKRB w GE - 1 9", 3, 10471);
+      //RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 1, 48);
+      //RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 2, 2039);      
+      //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3_195_901_860);
+      //RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 3, 97862);
+      //RunPerftWithStatsOnPosition("1qbrknrb/1p1ppppp/1np5/8/p4P1P/4P1N1/PPPP2P1/NQBRK1RB w GDgd - 0 9", 3, 10581);
+      RunPerftWithStatsOnPosition("nbkrbqrn/1pppppp1/8/4P2p/pP6/P7/2PP1PPP/NBRKBQRN w GC - 0 9", 3, 8475);
+      //RunPerftWithStatsOnPosition("bq1b1krn/pp1ppppp/3n4/2r5/3p3N/6N1/PPP1PPPP/BQRB1KR1 w GCg - 2 9", 3, 18571);
       if (false)
       {
         //RunPerftOnPosition("r1krnnbq/pp1ppp1p/6p1/2p5/2P5/P3P3/Rb1P1PPP/1BKRNNBQ w Dda - 0 9", 2, 61);
@@ -321,24 +324,20 @@ namespace Ceres.Chess.MoveGen.Test
         RunPerftOnPosition("rnbqkb1r/pp1p1ppp/2p5/4P3/2B5/8/PPP1NnPP/RNBQK2R w KQkq - 0 6", 3, 53392);
         RunPerftOnPosition("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 5, 164075551);
       }
-      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3, 8_902);        // Position 1: Initial Position
-      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5, 4_865_609);        // Position 1: Initial Position
-      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6, 119_060_324);        // Position 1: Initial Position
-      
+      //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3, 8_902);        // Position 1: Initial Position
+      //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5, 4_865_609);        // Position 1: Initial Position
+      //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6, 119_060_324);        // Position 1: Initial Position      
 
-      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", 5, 9_771_632);     // DJE test (initial position after e4, test en passant)
-
-      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3_195_901_860);        // Position 1: Initial Position
-                                                                                                               //  Console.WriteLine("Hash collisions " + HASH_COLLISIONS);
-                                                                                                               //  System.Environment.Exit(3);
+      //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", 5, 9_771_632);     // DJE test (initial position after e4, test en passant)
 
       RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 5, 193_690_690);  // Position 2: 'Kiwipete' position
       RunPerftOnPosition("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0", 7, 178_633_661);                // Position 3
       RunPerftWithStatsOnPosition("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", 6, 706_045_033);   // Position 4
-      System.Environment.Exit(3);
+      //System.Environment.Exit(3);
 
       RunPerftWithStatsOnPosition("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1", 6, 706_045_033);   // Position 4 Mirrored (should be same score as previous)
       RunPerftWithStatsOnPosition("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 5, 89_941_194);       // Position 5
+      RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3_195_901_860);        // Position 1: Initial Position
       // too slow dumpPerftScoreFfromFEN("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 7, 287188994746); // Position 6 28/1/2016: Correct (took 8_454_195 ms)
 
     }
@@ -372,9 +371,8 @@ namespace Ceres.Chess.MoveGen.Test
     //     4_865_609 perft(5) in 0.24 seconds
     public static void Test()
     {
-      //MovegenTest(); //MovegenTest();
-      RunChess960Verification(3);
-      //RunPerftSuite();
+      //MovegenTest(); //MovegenTest();      
+      RunPerftSuite();
       return;
 
       TestConvertPerformance();

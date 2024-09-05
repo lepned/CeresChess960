@@ -56,6 +56,7 @@ SOFTWARE.
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks.Sources;
+using static Ceres.Chess.MoveGen.Converters.ConverterMGMoveEncodedMove;
 using BitBoard = System.UInt64;
 
 #endregion
@@ -148,30 +149,34 @@ namespace Ceres.Chess.MoveGen
 
       if ((byte)M.Piece == MGPositionConstants.BKING)
       {
+        BitBoard rooks = (~A & ~B & C & D) & QBBoperations.lastRank;
+        var rKSq = QBBoperations.LSB(rooks);
+        var rQSq = QBBoperations.MSB(rooks);
+        var rKMoved = nFromSquare == rKSq;
+        var rQMoved = nFromSquare == rQSq;
+
         if (M.CastleShort)
         {
           BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
           BitBoard rookSq = QBBoperations.LSB((~A & ~B & C & D) & QBBoperations.lastRank);// 0xFF00000000000000UL);
-          BitBoard rookPos = (1UL << (int)rookSq | 288230376151711744);
-          BitBoard kingAndRooks = kingPos | rookPos;
+          BitBoard rookPos = 1UL << (int)rookSq;
+          rookPos = rookPos == 288230376151711744 ? 0 : rookPos | 288230376151711744;
+          var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
+          if (rookPos == kingPos)
+            kingAndRooks = 0;
+          else if ((rookPos & kingPos) != 0)
+            kingAndRooks = kingPos ^ rookPos;         
           A ^= kingPos;
           B ^= kingPos;
           C ^= kingAndRooks;
           D ^= kingAndRooks;
-          //A ^= 0x0a00000000000000;
-          //B ^= 0x0a00000000000000;
-          //C ^= 0x0f00000000000000;
-          //D ^= 0x0f00000000000000;
-          
+
 #if MG_USE_HASH
           HK ^= MGZobristKeySet.zkDoBlackCastle;
 	    		if (BlackCanCastleLong) HK ^= MGZobristKeySet.zkBlackCanCastleLong; // conditionally flip black castling long
 #endif
           Flags |= FlagsEnum.BlackDidCastle;
-
-          //  bf = bf &= ~BitFields.DrawerPresenceSw; //attackType &= ~ AttackType.Fire;
-
           Flags &= ~FlagsEnum.BlackCanCastle;
           Flags &= ~FlagsEnum.BlackCanCastleLong;
           return;
@@ -181,17 +186,19 @@ namespace Ceres.Chess.MoveGen
           BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
           BitBoard rookSq = QBBoperations.MSB((~A & ~B & C & D) & QBBoperations.lastRank); //0xFF00000000000000UL);
-          BitBoard rookPos = (1UL << (int)rookSq | 1152921504606846976);          
+          BitBoard rookPos = 1UL << (int)rookSq;
+          rookPos = rookPos == 1152921504606846976 ? 0 : rookPos | 1152921504606846976;
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
-          BitBoard kingAndRooks = kingPos | rookPos;
+          var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
+          if (rookPos == kingPos)
+            kingAndRooks = 0;
+          else if ((rookPos & kingPos) != 0)
+            kingAndRooks = kingPos ^ rookPos;
+          
           A ^= kingPos;
           B ^= kingPos;
           C ^= kingAndRooks;
-          D ^= kingAndRooks;
-          //A ^= 0x2800000000000000;
-          //B ^= 0x2800000000000000;
-          //C ^= 0xb800000000000000;
-          //D ^= 0xb800000000000000;
+          D ^= kingAndRooks;          
 
 #if MG_USE_HASH
           HK ^= MGZobristKeySet.zkDoBlackCastleLong;
@@ -226,18 +233,18 @@ namespace Ceres.Chess.MoveGen
         if (M.CastleShort)
         {
           BitBoard rookSq = QBBoperations.LSB((~A & ~B & C & ~D) & QBBoperations.firstRank); //0x00000000000000FF);
-          BitBoard rookPos = (1UL << (int)rookSq | 4);
-          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
+          BitBoard rookPos = 1UL << (int)rookSq;
+          rookPos = rookPos == 4 ? 0 : rookPos | 4;
+          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);           
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
-          BitBoard negKingAndRookPos = ~(kingPos | rookPos);
+          BitBoard kingAndRooks = kingPos | rookPos;
+          if (rookPos == kingPos)
+            kingAndRooks = 0;
+          else if ((rookPos & kingPos) != 0)
+            kingAndRooks = kingPos ^ rookPos;
           A ^= kingPos;
           B ^= kingPos;
-          C ^= (kingPos | rookPos);
-          D &= negKingAndRookPos;
-          //A ^= 0x000000000000000a;
-          //B ^= 0x000000000000000a;
-          //C ^= 0x000000000000000f;
-          //D &= 0xfffffffffffffff0;  // clear colour of e1,f1,g1,h1 (make white)
+          C ^= kingAndRooks;         
 
 #if MG_USE_HASH
 			HK^=MGZobristKeySet.zkDoWhiteCastle;
@@ -251,19 +258,21 @@ namespace Ceres.Chess.MoveGen
 
         if (M.CastleLong)
         {
-          BitBoard rookSq = QBBoperations.LSB((~A & ~B & C & ~D) & QBBoperations.firstRank);
-          BitBoard rookPos = (1UL << (int)rookSq | 16);
+          BitBoard rookSq = QBBoperations.MSB((~A & ~B & C & ~D) & QBBoperations.firstRank);
+          BitBoard rookPos = 1UL << (int)rookSq;
+          rookPos = rookPos == 16 ? 0 : rookPos | 16;
           BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
-          BitBoard negKingAndRookPos = ~(kingPos | rookPos);
+          var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
+          if (rookPos == kingPos)
+            kingAndRooks = 0;
+          else if ((rookPos & kingPos) != 0)
+            kingAndRooks = kingPos ^ rookPos;          
+
           A ^= kingPos;
           B ^= kingPos;
-          C ^= (kingPos | rookPos);
-          D &= negKingAndRookPos;
-          //A ^= 0x0000000000000028;
-          //B ^= 0x0000000000000028;
-          //C ^= 0x00000000000000b8;
-          //D &= 0xffffffffffffff07;  // clear colour of a1,b1,c1,d1,e1 (make white)
+          C ^= kingAndRooks;
+          
 #if MG_USE_HASH
 			HK^=MGZobristKeySet.zkDoWhiteCastleLong;
 			if (WhiteCanCastle) HK ^= MGZobristKeySet.zkWhiteCanCastle; // conditionally flip white castling
@@ -302,14 +311,7 @@ namespace Ceres.Chess.MoveGen
       else if ((byte)M.Piece == MGPositionConstants.BROOK)
       {
         //	if((1LL<<nFromSquare) & BLACKKRPOS)
-        
-        BitBoard rooks = (~A & ~B & C & D) & QBBoperations.lastRank; // 0xFF00000000000000UL;
-        BitBoard fromSq = 1UL << (int)nFromSquare;
-        //find the rook that moved
-        var rookSq = QBBoperations.LSB(fromSq & rooks);
-        ulong bKing = (D & C & B & A) & QBBoperations.lastRank;
-        int blackKingSq = (int)QBBoperations.LSB(bKing);
-        if (BlackCanCastle && nFromSquare == rookSq && blackKingSq > (int)rookSq)
+        if (nFromSquare == (ulong)BlackKingRookSquare)
         {
           // Black moved K-side Rook and forfeits right to castle K-side
           if (BlackCanCastle)
@@ -322,7 +324,7 @@ namespace Ceres.Chess.MoveGen
           }
         }
         //else if ((1LL<<nFromSquare) & BLACKQRPOS)
-        else if (BlackCanCastleLong && nFromSquare == rookSq && blackKingSq < (int)rookSq)
+        else if (nFromSquare == (ulong)BlackQueenRookSquare)
         {
           // Black moved the QS Rook and forfeits right to castle Q-side
           if (BlackCanCastleLong)
@@ -338,15 +340,8 @@ namespace Ceres.Chess.MoveGen
 
       else if ((byte)M.Piece == MGPositionConstants.WROOK)
       {
-        //if((1LL<<nFromSquare) & WHITEKRPOS)        
-        BitBoard rooks = (~A & ~B & C & ~D) & QBBoperations.firstRank; //0x00000000000000FF;
-        BitBoard fromSq = 1UL << (int)nFromSquare;
-        BitBoard kingSq = 1UL << (int)nToSquare;
-        //find the rook that moved
-        var rookSq = QBBoperations.LSB(fromSq & rooks);
-        ulong wKing = (~D & C & B & A) & QBBoperations.firstRank;
-        int whiteKingSq = (int)QBBoperations.LSB(wKing);
-        if (WhiteCanCastle && nFromSquare == rookSq && whiteKingSq > (int)rookSq)
+        //if((1LL<<nFromSquare) & WHITEKRPOS)
+        if (nFromSquare == (ulong)WhiteKingRookSquare)
         {
           // White moved K-side Rook and forfeits right to castle K-side
           if (WhiteCanCastle)
@@ -359,7 +354,7 @@ namespace Ceres.Chess.MoveGen
           }
         }
         //	else if((1LL<<nFromSquare) & WHITEQRPOS)
-        else if (WhiteCanCastleLong && nFromSquare == rookSq && whiteKingSq < (int)rookSq)
+        else if (nFromSquare == (ulong)WhiteQueenRookSquare)
         {
           // White moved the QSide Rook and forfeits right to castle Q-side
           if (WhiteCanCastleLong)

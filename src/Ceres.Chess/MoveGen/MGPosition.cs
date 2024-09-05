@@ -75,6 +75,10 @@ namespace Ceres.Chess.MoveGen
     public short MoveNumber;
     public short Rule50Count;
     public bool IsChess960;
+    public short WhiteKingRookSquare;
+    public short WhiteQueenRookSquare;
+    public short BlackKingRookSquare;
+    public short BlackQueenRookSquare;
     //    public short material;
 
 #if MG_USE_HASH

@@ -32,6 +32,7 @@ namespace Ceres.Chess
   public readonly struct PositionMiscInfo : IEquatable<PositionMiscInfo>
   {
     public enum HashMove50Mode { Ignore, Value, ValueBoolIfAbove98 };
+    
 
     [Flags]
     enum CastlingFlagsEnum : byte
@@ -113,7 +114,7 @@ namespace Ceres.Chess
       fixed (byte* repCount = &RepetitionCount)
         *repCount = (byte)count;
     }
-
+    
     /// <summary>
     /// Returns if white can castle short.
     /// </summary>
@@ -159,6 +160,11 @@ namespace Ceres.Chess
     /// en passant rights are present (if any).
     /// </summary>
     public char EnPassantFileChar => EPFileChars[(int)EnPassantFileIndex];
+
+    public readonly int WKRsquare; 
+    public readonly int WQRsquare; 
+    public readonly int BKRsquare; 
+    public readonly int BQRsquare; 
 
 
     /// <summary>
@@ -293,7 +299,18 @@ namespace Ceres.Chess
       MoveNum = (short)moveNum;
     }
 
-
+    public PositionMiscInfo(bool whiteCanCastleOO, bool whiteCanCastleOOO,
+                            bool blackCanCastleOO, bool blackCanCastleOOO,
+                            SideType sideToMove, int move50Count, int repetitionCount,
+                            int moveNum, EnPassantFileIndexEnum enPassantColIndex, int wKRsquare, int wQRsquare, int bKRsquare, int bQRsquare)
+      : this(whiteCanCastleOO, whiteCanCastleOOO, blackCanCastleOO, blackCanCastleOOO,
+             sideToMove, move50Count, repetitionCount, moveNum, enPassantColIndex)
+    {
+      WKRsquare = wKRsquare;
+      WQRsquare = wQRsquare;
+      BKRsquare = bKRsquare;
+      BQRsquare = bQRsquare;
+    }
     /// <summary>
     /// Tests for equality with another PositionMiscInfo
     /// (using chess semantics which implies that the MoveNum is irrelevant).

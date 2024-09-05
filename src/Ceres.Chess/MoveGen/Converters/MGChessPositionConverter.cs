@@ -229,12 +229,19 @@ namespace Ceres.Chess.MoveGen.Converters
         }
         else if (ps.Piece.Type == PieceType.Rook)
         {
-          if (ps.Piece.Side == SideType.White)
-            whiteRookSquares.Add(ps.Square);
-          else
-            blackRookSquares.Add(ps.Square);
+          if (ps.Piece.Side == SideType.White)        
+            whiteRookSquares.Add(ps.Square);         
+          else         
+            blackRookSquares.Add(ps.Square);          
         }
       }
+
+      //set rook positions
+      var miscInfo = fenParsed.MiscInfo;
+      pos.WhiteKingRookSquare = (short)miscInfo.WKRsquare;
+      pos.WhiteQueenRookSquare = (short)miscInfo.WQRsquare;
+      pos.BlackKingRookSquare = (short)miscInfo.BKRsquare;
+      pos.BlackQueenRookSquare = (short)miscInfo.BQRsquare;
 
       // Check if the position is Chess960
       if (whiteKingSquare != Square.FromFileAndRank(4, 0) || blackKingSquare != Square.FromFileAndRank(4, 7) ||
@@ -243,8 +250,6 @@ namespace Ceres.Chess.MoveGen.Converters
       {
         pos.IsChess960 = true;
       }
-
-
 
       pos.Rule50Count = fenParsed.MiscInfo.Move50Count;
       pos.MoveNumber = fenParsed.MiscInfo.MoveNum;

@@ -138,15 +138,6 @@ namespace Ceres.Chess.MoveGen
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     static void DoGenWhiteMoves(in MGPosition P, MGMoveList moves, MoveGenMode mode)
     {
-      //var ok = QBBoperations.CanWhiteKingReachShortRook(in P);
-      //var okLong = QBBoperations.CanWhiteKingReachLongRook(in P);
-      //if (okLong)
-      //{
-      //  //Console.WriteLine("CanKingReachShortRook");
-      //  var board = P.BoardString;
-      //  //Console.WriteLine(board);
-      //}
-
       Debug.Assert(moves.NumMovesUsed == 0);
 
       BitBoard occupied = P.A | P.B | P.C;                // all squares occupied by something
@@ -244,29 +235,8 @@ namespace Ceres.Chess.MoveGen
                 square = MGPositionConstants.MoveRight[q] & whiteFree;
                 AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING);
                 
-                // Conditionally generate O-O move:                
-                var canCastleShort = QBBoperations.CanWhiteKingReachShortRook(in P);
-                                
-                if (canCastleShort)
-                {
-                  //var board = P.BoardString;
-                  //Console.WriteLine($"Can reach short rook: Black: {toMove}");
-                  //Console.WriteLine(board);
-                }
-                
-                //if (currentSquare == MGPositionConstants.WHITEKINGPOS)
-                //{
-                //}
-               
-                if (P.WhiteCanCastle && canCastleShort)
-                  //(currentSquare == MGPositionConstants.WHITEKINGPOS) &&          // King is in correct Position AND
-                  //(P.WhiteCanCastle) &&               // White still has castle rights AND
-                  //scLegal
-                  //(MGPositionConstants.WHITECASTLEZONE & occupied) == 0 &&        // Castle Zone (f1,g1) is clear AND
-                  //((rookPos & MGPositionConstants.WHITEKRPOS) != 0) && // KRook is in correct Position AND
-                  //(!moves.MovesArray[moves.NumMovesUsed].IllegalMove) &&          // Last generated move (1 step to right) was legal AND
-                  //!isWhiteInCheck                                                 // King is not in Check
-                  //)
+                // Conditionally generate O-O move:               
+                if (P.WhiteCanCastle && QBBoperations.CanWhiteKingReachShortRook(in P))
                 {
                   // OK to Castle
                   square = MGPositionConstants.G1;
@@ -281,25 +251,8 @@ namespace Ceres.Chess.MoveGen
                 square = MGPositionConstants.MoveLeft[q] & whiteFree;
                 AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING);
 
-                // Conditionally generate O-O-O move:
-                var canCastleLong = QBBoperations.CanWhiteKingReachLongRook(in P);
-                if (canCastleLong)
-                {
-                  //var board = P.BoardString;                  
-                  //Console.WriteLine($"Can reach long rook: Black: {toMove}");
-                  //Console.WriteLine(board);
-                }
-
-
-                if (P.WhiteCanCastleLong && canCastleLong)
-                  //(currentSquare == MGPositionConstants.WHITEKINGPOS) &&          // King is in correct Position AND
-                  //(P.WhiteCanCastleLong) &&             // White still has castle-long rights AND
-                  //lcLegal // Castle Long Zone 
-                  //(MGPositionConstants.WHITECASTLELONGZONE & occupied) == 0 &&    // Castle Long Zone (b1,c1,d1) is clear AND	
-                  //((rookPos & MGPositionConstants.WHITEQRPOS) != 0) && // QRook is in correct Position AND
-                  //(!moves.MovesArray[moves.NumMovesUsed].IllegalMove) &&          // Last generated move (1 step to left) was legal AND
-                  //!isWhiteInCheck                                                 // King is not in Check
-                  //)
+                // Conditionally generate O-O-O move:                
+                if (P.WhiteCanCastleLong && QBBoperations.CanWhiteKingReachLongRook(in P))
                 {
                   // Ok to Castle Long
                   square = MGPositionConstants.C1;                    // Move King to c1
@@ -419,7 +372,6 @@ namespace Ceres.Chess.MoveGen
     }
 
 
-
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     static void AddWhiteMoveToListIfLegal(in MGPosition P, MGMoveList moves, byte fromsquare, BitBoard to, ulong piece, MGMove.MGChessMoveFlags flags = 0)
     {
@@ -447,38 +399,31 @@ namespace Ceres.Chess.MoveGen
 
       if (thisMove.CastleShort)
       {
-        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;
-        //kingPos = kingPos == to ? 0 : kingPos;
         BitBoard rookSq = QBBoperations.LSB(((~P.A & ~P.B & P.C & ~P.D)) & 0x00000000000000FF);
-        BitBoard rookPos = (1UL << (int)rookSq | 4);
+        BitBoard rookPos = 1UL << (int)rookSq; // | 4);
+        rookPos = rookPos == 4 ? 0 : rookPos | 4;
+        BitBoard kingPos = (1UL << fromsquare) | to;
+        kingPos = kingPos == to ? 0 : kingPos;
+        var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
         QA = P.A ^ kingPos;
         QB = P.B ^ kingPos;
-        QC = P.C ^ (rookPos | kingPos); //54; //P.C ^ 0x000000000000000f;
-        QD = P.D; //^ (rookPos | kingPos);
-        //			Q.D &= 0xfffffffffffffff0;	// clear colour of e1,f1,g1,h1 (make white)
+        QC = P.C ^ kingAndRooks; 
+        QD = P.D; 
       }
 
-      //if (thisMove.CastleShort)
-      //{
-      //  QA = P.A ^ 0x000000000000000a;
-      //  QB = P.B ^ 0x000000000000000a;
-      //  QC = P.C ^ 0x000000000000000f;
-      //  QD = P.D;
-      //  //			Q.D &= 0xfffffffffffffff0;	// clear colour of e1,f1,g1,h1 (make white)
-      //}     
-      
       else if (thisMove.CastleLong)
       {
-        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;
-        //kingPos = kingPos == to ? 0 : kingPos;
         BitBoard rookSq = QBBoperations.MSB(((~P.A & ~P.B & P.C & ~P.D)) & 0x00000000000000FF);
-        BitBoard rookPos = (1UL << (int)rookSq | 16);
-        QA = P.A ^ kingPos; //0x0000000000000028;
-        QB = P.B ^ kingPos; //0x0000000000000028;
-        QC = P.C ^ (rookPos | kingPos); // 0x00000000000000b8;
-        QD = P.D; //^ (rookPos | kingPos);
-        //			Q.D &= 0xffffffffffffff07;	// clear colour of a1,b1,c1,d1,e1 (make white)
+        BitBoard rookPos = 1UL << (int)rookSq; //| 16);
+        rookPos = rookPos == 16 ? 0 : rookPos | 16;
+        BitBoard kingPos = (1UL << fromsquare) | to;
+        var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
+        QA = P.A ^ kingPos; 
+        QB = P.B ^ kingPos; 
+        QC = P.C ^ kingAndRooks; 
+        QD = P.D; 
       }
+
       else
       {
         // clear old and new square:  
@@ -694,30 +639,10 @@ namespace Ceres.Chess.MoveGen
 
                 square = MGPositionConstants.MoveRight[q] & blackFree;
                 AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING);
-
-                //bool isBlackInCheck = IsBlackInCheck(P.A, P.B, P.C, P.D);
-                //BitBoard rookPos = ~P.A & ~P.B & P.C & P.D;
-
-                // Conditionally generate O-O move:
+               
+                // Conditionally generate O-O move:                
                 
-                var canCastleShort = QBBoperations.CanBlackKingReachShortRook(in P);
-                if (canCastleShort)
-                {
-                  //var board = P.BoardString;
-                  //Console.WriteLine($"Can reach short rook: Black: {P.BlackToMove}");
-                  //Console.WriteLine(board);
-                  
-                }                
-
-                if (P.BlackCanCastle && canCastleShort)
-                  //(currentSquare == MGPositionConstants.BLACKKINGPOS) &&          // King is in correct Position AND
-                  //(P.BlackCanCastle) &&               // Black still has castle rights AND
-                  //blackShortLegal &&
-                  //(MGPositionConstants.BLACKCASTLEZONE & occupied) == 0 &&        // Castle Zone (f8,g8) is clear	AND
-                  //((rookPos & MGPositionConstants.BLACKKRPOS) != 0) &&  // KRook is in correct Position AND
-                  //(!moves.MovesArray[moves.NumMovesUsed].IllegalMove) &&          // Last generated move (1 step to right) was legal AND
-                  //!isBlackInCheck                                                 // King is not in Check
-                  //)
+                if (P.BlackCanCastle && QBBoperations.CanBlackKingReachShortRook(in P))                
                 {
                   // OK to Castle
                   square = MGPositionConstants.G8; // Move King to g8
@@ -732,25 +657,8 @@ namespace Ceres.Chess.MoveGen
                 square = MGPositionConstants.MoveLeft[q] & blackFree;
                 AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING);
 
-                // Conditionally generate O-O-O move:
-                var canCastleLong = QBBoperations.CanBlackKingReachLongRook(in P);
-                if (canCastleLong)
-                {
-                  //var board = P.BoardString;
-                  //Console.WriteLine($"Can reach long rook: Black: {P.BlackToMove}");
-                  //Console.WriteLine(board);
-                }
-
-
-                if (P.BlackCanCastleLong && canCastleLong)                
-                //if (
-                //(currentSquare == MGPositionConstants.BLACKKINGPOS) &&        // King is in correct Position AND
-                //(P.BlackCanCastleLong) &&                                     // Black still has castle-long rights AND
-                //((rookPos & MGPositionConstants.BLACKQRPOS) != 0) &&          // QRook is in correct Position AND
-                //(!moves.MovesArray[moves.NumMovesUsed].IllegalMove) &&        // Last generated move (1 step to left) was legal AND
-                //(MGPositionConstants.BLACKCASTLELONGZONE & occupied) == 0 &&  // Castle Long Zone (b8,c8,d8) is clear
-                //!isBlackInCheck                                               // King is not in Check
-                //)
+                // Conditionally generate O-O-O move:                
+                if (P.BlackCanCastleLong && QBBoperations.CanBlackKingReachLongRook(in P))
                 {
                   // OK to castle Long
                   square = MGPositionConstants.C8;
@@ -900,45 +808,28 @@ namespace Ceres.Chess.MoveGen
       if (thisMove.CastleShort)
       {
         BitBoard kingPos = (1UL << fromsquare) | (ulong)to;
-        //kingPos = kingPos == to ? 0 : kingPos;
         BitBoard rookSq = QBBoperations.LSB((((~P.A & ~P.B & P.C) & P.D) & 0xFF00000000000000UL));
         BitBoard rookPos = (1UL << (int)rookSq | 288230376151711744);
         QA = P.A ^ kingPos;
         QB = P.B ^ kingPos;
-        QC = P.C ^ (rookPos | kingPos); //54; //P.C ^ 0x000000000000000f;
+        QC = P.C ^ (rookPos | kingPos); 
         QD = P.D ^ (rookPos | kingPos);
         //			Q.D &= 0xfffffffffffffff0;	// clear colour of e1,f1,g1,h1 (make white)
       }
 
       else if (thisMove.CastleLong)
       {
-        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;
-        //kingPos = kingPos == to ? 0 : kingPos;
+        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;        
         BitBoard rookSq = QBBoperations.MSB((((~P.A & ~P.B & P.C) & P.D) & 0xFF00000000000000UL));
         BitBoard rookPos = (1UL << (int)rookSq | 1152921504606846976);
-        string board = P.BoardString;
-        //Console.WriteLine(board);
-        QA = P.A ^ kingPos; //0x0000000000000028;
-        QB = P.B ^ kingPos; //0x0000000000000028;
-        QC = P.C ^ (rookPos | kingPos); // 0x00000000000000b8;
+        
+        QA = P.A ^ kingPos; 
+        QB = P.B ^ kingPos; 
+        QC = P.C ^ (rookPos | kingPos);
         QD = P.D ^ (rookPos | kingPos);
         //			Q.D &= 0xffffffffffffff07;	// clear colour of a1,b1,c1,d1,e1 (make white)
       }
-
-      //if (thisMove.CastleShort)
-      //{
-      //  QA = P.A ^ 0x0a00000000000000;
-      //  QB = P.B ^ 0x0a00000000000000;
-      //  QC = P.C ^ 0x0f00000000000000;
-      //  QD = P.D ^ 0x0f00000000000000;
-      //}
-      //else if (thisMove.CastleLong)
-      //{
-      //  QA = P.A ^ 0x2800000000000000;
-      //  QB = P.B ^ 0x2800000000000000;
-      //  QC = P.C ^ 0xb800000000000000;
-      //  QD = P.D ^ 0xb800000000000000;
-      //}
+      
       else
       {
         // clear old and new square  
