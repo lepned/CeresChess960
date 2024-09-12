@@ -74,6 +74,11 @@ namespace Ceres.Chess.EncodedPositions
     /// </summary>
     public readonly byte Rule50Count;
 
+    public readonly byte WKRsquare;
+    public readonly byte WQRsquare;
+    public readonly byte BKRsquare;
+    public readonly byte BQRsquare;
+
 
     /// <summary>
     /// Constructor.
@@ -93,6 +98,16 @@ namespace Ceres.Chess.EncodedPositions
       Castling_Them_OO = castling_Them_OO;
       SideToMove = sideToMove;
       Rule50Count = Math.Min((byte)100, rule50Count); // above 100 LC0 behaves badly (crash or policy does not sum to 100%)
+    }
+
+    public EncodedPositionMiscInfo(byte castling_US_OOO, byte castling_US_OO, byte castling_Them_OOO, byte castling_Them_OO, SideToMoveEnum sideToMove, byte rule50Count,
+        byte wKRsquare, byte wQRsquare, byte bKRsquare, byte bQRsquare) : this(castling_US_OOO, castling_US_OO, castling_Them_OOO, castling_Them_OO, sideToMove, rule50Count)
+    {
+      
+      WKRsquare = wKRsquare;
+      WQRsquare = wQRsquare;
+      BKRsquare = bKRsquare;
+      BQRsquare = bQRsquare;
     }
 
 

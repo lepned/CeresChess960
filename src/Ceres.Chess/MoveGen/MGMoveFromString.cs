@@ -14,6 +14,9 @@
 #region Using directives
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Ceres.Chess.MoveGen.Converters;
 using Ceres.Chess.Textual;
 
@@ -35,6 +38,10 @@ namespace Ceres.Chess.MoveGen
     /// <returns></returns>
     public static MGMove ParseMove(MGPosition pos, string moveStr)
     {
+      //if (moveStr == "e8g8")
+      //{
+
+      //}
       if (!TryParseMoveCoordinateOrAlgebraic(pos, moveStr, out MGMove move))
       {
         Position position = MGChessPositionConverter.PositionFromMGChessPosition(in pos);
@@ -44,7 +51,6 @@ namespace Ceres.Chess.MoveGen
       else
         return move;
     }
-
 
     /// <summary>
     /// Attempts to parse a move string in coordinate or long algebraic format.
@@ -63,8 +69,37 @@ namespace Ceres.Chess.MoveGen
 
       MGMoveList moves = new MGMoveList();
       MGMoveGen.GenerateMoves(in pos, moves);
+      char rank1 = moveStr[1];
+      char rank2 = moveStr[3];
+      var sameRank = rank1 == rank2;
+      if (moveStr == "e8g8")
+      {
+      }
       foreach (MGMove moveTry in moves.MovesArray)
       {
+        if (moveTry.IsCastle && sameRank)
+        { 
+          var upper = moveStr.ToUpper();
+          string fromTo = $"{moveTry.FromSquare}{moveTry.ToSquare}";
+ 
+          if (upper == fromTo)
+          {
+            move = moveTry;
+            return true;
+          }
+          //test normal chess
+         else if ((moveTry.CastleShort && upper == "E8G8") || (moveTry.CastleShort && upper == "E1G1") )
+          {
+            move = moveTry;
+            return true;
+          }
+          else if ((moveTry.CastleLong && upper == "E8C8") || (moveTry.CastleLong && upper == "E1C1"))
+          {
+            move = moveTry;
+            return true;
+          }
+
+        }
         // Accept moves in any of multiple formats, including Chess 960 (for castling variation)
         if (String.Equals(moveTry.MoveStr(MGMoveNotationStyle.LC0Coordinate), moveStr, StringComparison.OrdinalIgnoreCase)
          || String.Equals(moveTry.MoveStr(MGMoveNotationStyle.LC0Coordinate960Format), moveStr, StringComparison.OrdinalIgnoreCase)
@@ -72,7 +107,7 @@ namespace Ceres.Chess.MoveGen
         {
           move = moveTry;
           return true;
-        }           
+        }
       }
 
       move = default;

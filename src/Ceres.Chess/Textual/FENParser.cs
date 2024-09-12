@@ -33,7 +33,7 @@ namespace Ceres.Chess.Textual
   /// as FEN string into FENParseResult
   /// </summary>
   public static partial class FENParser
-  {
+  {    
     /// <summary>
     /// FEN string corresponding to the starting position in chess.
     /// </summary>
@@ -152,7 +152,7 @@ namespace Ceres.Chess.Textual
       int nextSpaceIndex = fen.IndexOf(' ', charIndex);
       string castlingRights;
 
-      if (nextSpaceIndex != -1)
+      if (nextSpaceIndex != -1 )
       {
         // There is a space, so extract the substring up to that space
         castlingRights = fen.Substring(charIndex, nextSpaceIndex - charIndex);
@@ -164,7 +164,9 @@ namespace Ceres.Chess.Textual
       }
 
       // Only proceed if there are castling rights specified (i.e., the string is not "-")
-      if (castlingRights != "-")
+      if (castlingRights == "-")
+        charIndex++;
+      else
       {         
         MGPosition pos = default;
         Square whiteKingSquare = default;
@@ -281,6 +283,12 @@ namespace Ceres.Chess.Textual
         }
 
         charIndex += castlingRights.Length;
+      }
+      var normalPos = wKRsquare == 0 && wQRsquare == 7 && bKRsquare == 56 && bQRsquare == 63;
+      if(!normalPos && castlingRights.Length > 0)
+      {
+        MGPositionConstants.rooksThatCanCastleMask = 1UL << wKRsquare | 1UL << wQRsquare | 1UL << bKRsquare | 1UL << bQRsquare ;
+        //MGPositionConstants.IsChess960 = true;
       }
 
       SkipAnySpaces();

@@ -13,9 +13,11 @@
 
 #region Using directives
 
+using Ceres.Chess.MoveGen;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using static Ceres.Chess.MoveGen.Converters.ConverterMGMoveEncodedMove;
 
 #endregion
 
@@ -77,14 +79,15 @@ namespace Ceres.Chess.EncodedPositions.Basic
     {
       Debug.Assert(!isCastling || from.Rank == 0); // first rank
       Debug.Assert(!isCastling || to.Rank == 0); // first rank
-      Debug.Assert(!isCastling || from.File == 4); // E1
-      Debug.Assert(!isCastling || to.File == 0 || to.File == 7); // A1 or H1
+      //Debug.Assert(!isCastling || from.File == 4); // E1
+      //Debug.Assert(!isCastling || to.File == 0 || to.File == 7); // A1 or H1
 
       int val = to.Value +
                 (from.Value << 6) +
                 ((int)promotion << 12);
       if (flipped) val |= MaskFlip;
-      if (isCastling) val |= MaskCastling;
+      if (isCastling)
+        val |= MaskCastling;
       rawValue = (ushort)val;
     }
 
@@ -231,7 +234,7 @@ namespace Ceres.Chess.EncodedPositions.Basic
     /// Returns index of this move in the neural network (or -1, for moves that are not possible)
     /// In range [0.1857]
     /// </summary>
-    public int IndexNeuralNet => indexesToNNIndices[IndexPacked];    
+    public int IndexNeuralNet => indexesToNNIndices[IndexPacked];
 
 #if WORKS_BUT_SLOW_UNNEEDED
     /// <summary>
@@ -316,10 +319,19 @@ namespace Ceres.Chess.EncodedPositions.Basic
     {
       Debug.Assert(index >= 0 && index < EncodedPolicyVector.POLICY_VECTOR_LENGTH);
       EncodedMove raw = new EncodedMove(nnIndicesToIndices[index]);
-
+      
+      //var tt = NEURAL_NET_MOVE_STR[index]; 
+      //FromTo fromToTest = CalcFromTo(raw.RawValue & (16384 - 1));      
+      //byte toSquareTest = fromToTest.To;
+      //ulong movedToRookSqTest = MGPositionConstants.rookMask & (1UL << toSquareTest);
+      //if (isKingMove && movedToRookSqTest != 0)
+      //{        
+      //}
       if (pieceInfoWasAvailable)
       {
-        if ((index == 97 || index == 103) && isKingMove) // castling
+        byte toSquare = CalcFromTo(raw.RawValue & (16384 - 1)).To;
+        ulong movedToRookSq = MGPositionConstants.rooksThatCanCastleMask & (1UL << toSquare);
+        if (isKingMove && movedToRookSq != 0) // castling
           return new EncodedMove((ushort)(raw.IndexPacked | MaskCastling));
         else if (isPawnMove && raw.ToSquare.Rank == 7) // promotion
         {

@@ -234,12 +234,14 @@ namespace Ceres.Chess.MoveGen
 
                 square = MGPositionConstants.MoveRight[q] & whiteFree;
                 AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING);
-                
+
+                ulong rookSquare;
                 // Conditionally generate O-O move:               
-                if (P.WhiteCanCastle && QBBoperations.CanWhiteKingReachShortRook(in P))
+                if (P.WhiteCanCastle && QBBoperations.CanWhiteKingReachShortRook(in P, out rookSquare))
                 {
                   // OK to Castle
-                  square = MGPositionConstants.G1;
+                  //var g1 = MGPositionConstants.G1;
+                  square = rookSquare; //MGPositionConstants.G1;
                   M.Flags = 0;
                   M.CastleShort = true;
                   AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING, M.Flags);
@@ -251,11 +253,12 @@ namespace Ceres.Chess.MoveGen
                 square = MGPositionConstants.MoveLeft[q] & whiteFree;
                 AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING);
 
+
                 // Conditionally generate O-O-O move:                
-                if (P.WhiteCanCastleLong && QBBoperations.CanWhiteKingReachLongRook(in P))
+                if (P.WhiteCanCastleLong && QBBoperations.CanWhiteKingReachLongRook(in P, out rookSquare))
                 {
                   // Ok to Castle Long
-                  square = MGPositionConstants.C1;                    // Move King to c1
+                  square = rookSquare; //MGPositionConstants.C1;                    // Move King to c1
                   M.Flags = 0;
                   M.CastleLong = true;
                   AddWhiteMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.WKING, M.Flags);
@@ -401,9 +404,10 @@ namespace Ceres.Chess.MoveGen
       {
         BitBoard rookSq = QBBoperations.LSB(((~P.A & ~P.B & P.C & ~P.D)) & 0x00000000000000FF);
         BitBoard rookPos = 1UL << (int)rookSq; // | 4);
-        rookPos = rookPos == 4 ? 0 : rookPos | 4;
-        BitBoard kingPos = (1UL << fromsquare) | to;
-        kingPos = kingPos == to ? 0 : kingPos;
+        rookPos = rookPos == 4 ? 0 : rookPos | 4;        
+        ulong kingToSq = 2; //g1 in decimals
+        ulong kingIdx = 1; //g1 represented as index from h1..a1
+        BitBoard kingPos = fromsquare == kingIdx ? 0 : (1UL << fromsquare) | kingToSq;
         var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
         QA = P.A ^ kingPos;
         QB = P.B ^ kingPos;
@@ -414,9 +418,11 @@ namespace Ceres.Chess.MoveGen
       else if (thisMove.CastleLong)
       {
         BitBoard rookSq = QBBoperations.MSB(((~P.A & ~P.B & P.C & ~P.D)) & 0x00000000000000FF);
-        BitBoard rookPos = 1UL << (int)rookSq; //| 16);
+        BitBoard rookPos = 1UL << (int)rookSq;
         rookPos = rookPos == 16 ? 0 : rookPos | 16;
-        BitBoard kingPos = (1UL << fromsquare) | to;
+        ulong kingToSq = 32; //c1 in decimals
+        ulong kingIdx = 5; //c1 represented as index from h1..a8
+        BitBoard kingPos = fromsquare == kingIdx ? 0 : (1UL << fromsquare) | kingToSq;
         var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
         QA = P.A ^ kingPos; 
         QB = P.B ^ kingPos; 
@@ -639,13 +645,13 @@ namespace Ceres.Chess.MoveGen
 
                 square = MGPositionConstants.MoveRight[q] & blackFree;
                 AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING);
-               
-                // Conditionally generate O-O move:                
-                
-                if (P.BlackCanCastle && QBBoperations.CanBlackKingReachShortRook(in P))                
+
+                ulong rookSquare;
+                // Conditionally generate O-O move:
+                if (P.BlackCanCastle && QBBoperations.CanBlackKingReachShortRook(in P, out rookSquare))                
                 {
                   // OK to Castle
-                  square = MGPositionConstants.G8; // Move King to g8
+                  square = rookSquare; //MGPositionConstants.G8; // Move King to g8
                   M.Flags = 0;
                   M.CastleShort = true;
                   AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING, M.Flags);
@@ -657,11 +663,12 @@ namespace Ceres.Chess.MoveGen
                 square = MGPositionConstants.MoveLeft[q] & blackFree;
                 AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING);
 
+                //ulong rookSquare;
                 // Conditionally generate O-O-O move:                
-                if (P.BlackCanCastleLong && QBBoperations.CanBlackKingReachLongRook(in P))
+                if (P.BlackCanCastleLong && QBBoperations.CanBlackKingReachLongRook(in P, out rookSquare))
                 {
                   // OK to castle Long
-                  square = MGPositionConstants.C8;
+                  square = rookSquare; // MGPositionConstants.C8;
                   M.Flags = 0;
                   M.CastleLong = true;
                   AddBlackMoveToListIfLegal(in P, moves, q, square, MGPositionConstants.BKING, M.Flags);
@@ -807,7 +814,9 @@ namespace Ceres.Chess.MoveGen
 
       if (thisMove.CastleShort)
       {
-        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;
+        ulong kingToSq = 144115188075855872; //g8 in decimals
+        ulong kingIdx = 57; //g8 represented as index from h1..a8
+        BitBoard kingPos = fromsquare == kingIdx ? 0 : (1UL << fromsquare) | kingToSq;
         BitBoard rookSq = QBBoperations.LSB((((~P.A & ~P.B & P.C) & P.D) & 0xFF00000000000000UL));
         BitBoard rookPos = (1UL << (int)rookSq | 288230376151711744);
         QA = P.A ^ kingPos;
@@ -819,7 +828,10 @@ namespace Ceres.Chess.MoveGen
 
       else if (thisMove.CastleLong)
       {
-        BitBoard kingPos = (1UL << fromsquare) | (ulong)to;        
+        ulong kingToSq = 2305843009213693952; //c8 in decimals
+        ulong kingIdx = 61; //c8 represented as index from h1..a8
+        BitBoard kingPos = fromsquare == kingIdx ? 0 : (1UL << fromsquare) | kingToSq;
+        //BitBoard kingPos = (1UL << fromsquare) | (ulong)to;        
         BitBoard rookSq = QBBoperations.MSB((((~P.A & ~P.B & P.C) & P.D) & 0xFF00000000000000UL));
         BitBoard rookPos = (1UL << (int)rookSq | 1152921504606846976);
         

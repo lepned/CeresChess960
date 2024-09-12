@@ -24,6 +24,7 @@ using Ceres.Chess.MoveGen;
 using Ceres.Chess.Textual;
 using Ceres.Chess.EncodedPositions.Basic;
 using Ceres.Chess.Positions;
+using System.Numerics;
 
 #endregion
 
@@ -486,7 +487,8 @@ namespace Ceres.Chess.EncodedPositions
 
       return new EncodedPositionMiscInfo(castling_US_OOO, castling_US_OO,
                                             castling_Them_OOO, castling_Them_OO,
-                                           (EncodedPositionMiscInfo.SideToMoveEnum)sideToMove, rule50);
+                                           (EncodedPositionMiscInfo.SideToMoveEnum)sideToMove, rule50, 
+                                           (byte)posMiscInfo.WKRsquare, (byte)posMiscInfo.WQRsquare, (byte)posMiscInfo.BKRsquare, (byte)posMiscInfo.BQRsquare);
     }
 
     
@@ -630,6 +632,7 @@ namespace Ceres.Chess.EncodedPositions
       bool whiteCanCastleOOO = true;
       bool blackCanCastleOOO = true;
       int rule50 = 0;
+      //var rooks = MGPositionConstants.rookMask;
 
       if (historyIndex == 0) // The Rule50 and castling can only be definitively determined for the first position.
       {
@@ -641,6 +644,7 @@ namespace Ceres.Chess.EncodedPositions
           whiteCanCastleOOO = MiscInfo.InfoPosition.Castling_US_OOO == 1;
           blackCanCastleOO = MiscInfo.InfoPosition.Castling_Them_OO == 1;
           blackCanCastleOOO = MiscInfo.InfoPosition.Castling_Them_OOO == 1;
+          //MiscInfo.InfoPosition.BKRsquare = pos. board.TheirKing.Bits.Data;
         }
         else
         {
@@ -693,10 +697,25 @@ namespace Ceres.Chess.EncodedPositions
         }
       }
 
+      int bkrSquare = 0;
+      int bqrSquare = 0;
+      int wkrSquare = 0;
+      int wqrSquare = 0;
+
+
+      if (miscInfo.BKRsquare == 0)
+      {        
+        var white = MGPositionConstants.rooksThatCanCastleMask & QBBoperations.firstRank;
+        var black = MGPositionConstants.rooksThatCanCastleMask & QBBoperations.lastRank;
+        wkrSquare = (int)QBBoperations.LSB(white);
+        wqrSquare = (int)QBBoperations.MSB(white);
+        bkrSquare = (int)QBBoperations.LSB(black);
+        bqrSquare = (int)QBBoperations.MSB(black);
+      }
       // NOTE: move number cannot be determined, set value to 2 (which will translate to 1 ply in FEN) since 0 is considered invalid.
       miscInfo = new PositionMiscInfo(whiteCanCastleOO, whiteCanCastleOOO, blackCanCastleOO, blackCanCastleOOO,
                                     thisHistoryPositionIsWhite ? SideType.White : SideType.Black,
-                                    rule50, repetitionCount, 2, enPassant);
+                                    rule50, repetitionCount, 2, enPassant, wkrSquare, wqrSquare, bkrSquare,bqrSquare);
       pos.SetMiscInfo(miscInfo);
 
       return pos;

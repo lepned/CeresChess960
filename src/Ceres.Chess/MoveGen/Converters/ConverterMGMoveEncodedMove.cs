@@ -80,7 +80,7 @@ namespace Ceres.Chess.MoveGen.Converters
                                             MCChessPositionPieceEnum.BlackRook, MCChessPositionPieceEnum.BlackQueen, MCChessPositionPieceEnum.BlackKing };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static FromTo CalcFromTo(int i)
+    public static FromTo CalcFromTo(int i)
     {
       EncodedMove lzMove = new EncodedMove((ushort)i);
 
@@ -106,7 +106,12 @@ namespace Ceres.Chess.MoveGen.Converters
 
 
     public static MGMove EncodedMoveToMGChessMove(EncodedMove thisMove, in MGPosition position)
-   {
+    {
+      if (thisMove.AlgebraicStr == "e1h1")
+      {
+        //throw new Exception("Illegal move " + thisMove + " in position " + position.ToPosition.FEN);
+      }
+
       MGMove moveMG = DoEncodedMoveToMGChessMove(thisMove, in position);
       if (position.SideToMove == SideType.Black)
       {
@@ -125,6 +130,10 @@ namespace Ceres.Chess.MoveGen.Converters
     /// <returns></returns>
     static MGMove DoEncodedMoveToMGChessMove(EncodedMove thisMove, in MGPosition position)
     {
+      if (thisMove.AlgebraicStr == "d1f1")
+      {
+        //throw new Exception("Illegal move " + thisMove + " in position " + position.ToPosition.FEN);
+      }
       Debug.Assert(position != default);
 
       FromTo fromTo = CalcFromTo(thisMove.RawValue & (16384 - 1));
@@ -174,27 +183,49 @@ namespace Ceres.Chess.MoveGen.Converters
       }
       else
       {
+        bool castlingLegal = position.BlackToMove ? position.BlackCanCastle || position.BlackCanCastleLong : position.WhiteCanCastle || position.WhiteCanCastleLong;
         bool isCastling = false;
+        ulong movedToRookSq = MGPositionConstants.rooksThatCanCastleMask & (1UL << toSquare);
 
-        int thisNNIndex = thisMove.IndexNeuralNet;
-        bool isCastlingFromAndToSquares = thisNNIndex == 103 || thisNNIndex == 97;
-        if (isCastlingFromAndToSquares)
+        if (castlingLegal && pieceMoving == PieceType.King && movedToRookSq != 0)
         {
-          isCastling = (pieceMoving == PieceType.King);
-        }
-
-        if (isCastling)
-        {
-          int castlingPart;
-          if (toSquare <= 4)
+          int castlingPart = 0;
+          if (toSquare < fromSquare)
           {
-            castlingPart = (int)MGMove.MGChessMoveFlags.CastleShort;
-            toSquare = 1;
+            ulong rookPos;
+            if (position.BlackToMove)
+            {
+              ulong myOwnRook = movedToRookSq & QBBoperations.lastRank;
+              isCastling = position.BlackCanCastle && myOwnRook != 0 && QBBoperations.CanBlackKingReachShortRook(in position, out rookPos);
+            }
+            else
+            {
+              ulong myOwnRook = movedToRookSq & QBBoperations.firstRank;
+              isCastling = position.WhiteCanCastle && myOwnRook != 0 && QBBoperations.CanWhiteKingReachShortRook(in position, out rookPos);
+            }
+              
+            //toSquare = 1;
+            if (isCastling)
+              castlingPart = (int)MGMove.MGChessMoveFlags.CastleShort;
           }
           else
           {
-            castlingPart = (int)MGMove.MGChessMoveFlags.CastleLong;
-            toSquare = 5;
+            ulong rookPos;
+            if (position.BlackToMove)
+            {
+              ulong myOwnRook = movedToRookSq & QBBoperations.lastRank;
+              isCastling = position.BlackCanCastleLong && myOwnRook != 0 && QBBoperations.CanBlackKingReachLongRook(in position, out rookPos);
+            }
+            else
+            {
+              ulong myOwnRook = movedToRookSq & QBBoperations.firstRank;
+              isCastling = position.WhiteCanCastleLong && myOwnRook != 0 && QBBoperations.CanWhiteKingReachLongRook(in position, out rookPos);
+            }
+            
+            //toSquare = 5;
+            if (isCastling)
+              castlingPart = (int)MGMove.MGChessMoveFlags.CastleLong;
+            
           }
 
           return new MGMove(fromSquare, toSquare, (MGMove.MGChessMoveFlags)(castlingPart | pieceMGFlags));
@@ -213,7 +244,7 @@ namespace Ceres.Chess.MoveGen.Converters
 
     public static MCChessPositionPieceEnum PieceToMGPiece(PieceType pieceMoving, bool blackToMove)
     {
-      return blackToMove ? blackPieceToMGPieceCode[(int)pieceMoving] 
+      return blackToMove ? blackPieceToMGPieceCode[(int)pieceMoving]
                          : whitePieceToMGPieceCode[(int)pieceMoving];
     }
 
@@ -264,12 +295,26 @@ namespace Ceres.Chess.MoveGen.Converters
       if (thisMove.IsCastleOrPromotion)
       {
         if (thisMove.CastleShort)
-        {
-          return moveCastle;
+        {          
+          Square sqFrom = squareMap[thisMove.FromSquareIndex];
+          Square sqTo = squareMap[thisMove.ToSquareIndex];
+
+          var encodedMove = new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
+                                 new EncodedSquare(sqTo.SquareIndexStartA1), promotion, true);
+          var castle = new EncodedMove(thisMove.FromSquare.ToString(), thisMove.ToSquare.ToString(), EncodedMove.PromotionType.None, true);
+          Debug.Assert(castle == encodedMove);
+          return encodedMove;
         }
         else if (thisMove.CastleLong)
         {
-          return moveCastleLong;
+          Square sqFrom = squareMap[thisMove.FromSquareIndex];
+          Square sqTo = squareMap[thisMove.ToSquareIndex];
+
+          var encodedMove = new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
+                                 new EncodedSquare(sqTo.SquareIndexStartA1), promotion, true);
+          var castle = new EncodedMove(thisMove.FromSquare.ToString(), thisMove.ToSquare.ToString(), EncodedMove.PromotionType.None, true);
+          Debug.Assert(castle == encodedMove);          
+          return encodedMove;
         }
         else if (thisMove.IsPromotion)
         {
@@ -296,7 +341,7 @@ namespace Ceres.Chess.MoveGen.Converters
 
       Square squareFrom = squareMap[thisMove.FromSquareIndex];
       Square squareTo = squareMap[thisMove.ToSquareIndex];
-      return new EncodedMove(new EncodedSquare(squareFrom.SquareIndexStartA1), 
+      return new EncodedMove(new EncodedSquare(squareFrom.SquareIndexStartA1),
                              new EncodedSquare(squareTo.SquareIndexStartA1), promotion, false);
     }
 

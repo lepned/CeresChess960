@@ -21,6 +21,7 @@ using Ceres.Chess.NNEvaluators.Specifications;
 using Ceres.Chess.UserSettings;
 using Ceres.MCTS.Params;
 using Ceres.MCTS.Managers.Limits;
+using Ceres.Chess.MoveGen;
 
 
 #endregion
@@ -43,6 +44,11 @@ namespace Ceres.Features.UCI
     /// If verbose move stats should be output at periodic intervals.
     /// </summary>
     bool logLiveStats = false;
+
+    /// <summary>
+    /// If chess960 is selected enable chess960 logic.
+    /// </summary>
+    bool UCI_Chess960 = true;
 
     /// <summary>
     /// If detailed top-level move info should be output at end of move selection.
@@ -193,6 +199,10 @@ namespace Ceres.Features.UCI
 
         case "loglivestats":
           SetBool(value, ref logLiveStats);
+          break;
+
+        case "uci_chess960":
+          SetBool(value, ref UCI_Chess960);
           break;
 
         case "maxtreevisits":
@@ -387,6 +397,7 @@ namespace Ceres.Features.UCI
       {
         OutStream.WriteLine("Invalid value, expected true or false");
       }
+      MGPositionConstants.IsChess960 = value;
     }
 
 
@@ -468,6 +479,7 @@ option name MaxTreeNodes type string default
 option name ReducedMemoryMode type check default false
 option name EnableSiblingEval type check default false
 option name EnableUncertaintyBoosting type check default false
+option name UCI_Chess960 type check default false
 ");
     /* 
 option name ConfigFile type string default lc0.config

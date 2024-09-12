@@ -70,6 +70,7 @@ namespace Ceres.Chess.MoveGen
     public const ulong firstRank = 0x00000000000000FFUL;
     public const ulong lastRank = 0xFF00000000000000UL;
 
+
     //rook, king
     public static readonly ulong[,] ShortRookKingMask = {
       { 0, 7, 7, 15, 31, 63, 127, 0 },
@@ -221,14 +222,14 @@ namespace Ceres.Chess.MoveGen
       return true;
     }
 
-    public static bool CanBlackKingReachLongRook(in MGPosition pos)
+    public static bool CanBlackKingReachLongRook(in MGPosition pos, out ulong rookPos)
     {      
       var occ = pos.A | pos.B | pos.C;
       ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
       int kingSq = (int)LSB(bKing);
       ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
       int rookSq = (int)(MSB(bRooks));
-
+      rookPos = 1UL << rookSq;
       if (bKing == 0 || bRooks == 0UL || kingSq > rookSq)
       {
         return false;
@@ -256,14 +257,14 @@ namespace Ceres.Chess.MoveGen
       return false;
     }
 
-    public static bool CanWhiteKingReachLongRook(in MGPosition pos)
+    public static bool CanWhiteKingReachLongRook(in MGPosition pos, out ulong rookPos)
     {      
       var occ = pos.A | pos.B | pos.C;  // Occupation(pos);
       ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank;
       int kingSq = (int)LSB(wKing);
       ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;      
-      int rookSq = (int)MSB((wRooks & firstRank));      
-
+      int rookSq = (int)MSB((wRooks & firstRank));
+      rookPos = 1UL << rookSq;
       if (wKing == 0 || wRooks == 0UL || kingSq > rookSq)
       {
         return false;
@@ -290,13 +291,13 @@ namespace Ceres.Chess.MoveGen
 
     }
 
-    public static bool CanBlackKingReachShortRook(in MGPosition pos)
+    public static bool CanBlackKingReachShortRook(in MGPosition pos, out ulong rookPos)
     {      
       ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
       int kingSq = (int)LSB(bKing);
       ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
       int rookSq = (int)(LSB(bRooks));
-
+      rookPos = 1UL << rookSq;
       if (bKing == 0 || bRooks == 0UL || kingSq < rookSq)
       {
         return false;
@@ -316,14 +317,14 @@ namespace Ceres.Chess.MoveGen
       return false;
     }
 
-    public static bool CanWhiteKingReachShortRook(in MGPosition pos)
+    public static bool CanWhiteKingReachShortRook(in MGPosition pos, out ulong rookPos)
     {     
       var occ = pos.A | pos.B | pos.C;
       ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank; // pos.B & pos.C; //GetKings(pos.A, pos.B, pos.C, pos.D);
       int kingSq = (int)LSB(wKing);
       ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;      
       int rookSq = (int)(LSB(wRooks));
-
+      rookPos = 1UL << rookSq;
       if (wKing == 0 || wRooks == 0UL || kingSq < rookSq)
       {
         return false;
@@ -344,6 +345,10 @@ namespace Ceres.Chess.MoveGen
 
   public static class MGPositionConstants
   {
+    public static ulong rooksThatCanCastleMask = 0; //normal chess start position for rooks in decimal
+    public static ulong kingMask = 0; //normal chess start position for kings in decimal
+    public static bool IsChess960 = true; //set to true if you want to use chess960 starting position
+
     public const int MOVELIST_SIZE = 128;
 
     public const int CHECKMATE = 9999;

@@ -110,7 +110,7 @@ namespace Ceres.Chess.MoveGen
   /// <param name="flags"></param>
   public MGMove(byte from, byte to, MGChessMoveFlags flags)
     {
-      Debug.Assert(from != to);
+      //Debug.Assert(from != to);
       Debug.Assert(from < 64);
       Debug.Assert(to < 64);
 

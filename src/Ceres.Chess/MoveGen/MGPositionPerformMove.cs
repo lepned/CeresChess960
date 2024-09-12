@@ -157,8 +157,11 @@ namespace Ceres.Chess.MoveGen
 
         if (M.CastleShort)
         {
-          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
-          kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          //BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
+          //kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          ulong kingToSq = 144115188075855872; //g8 in decimals
+          ulong kingIdx = 57; //g8 represented as index from h1..a1
+          BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;
           BitBoard rookSq = QBBoperations.LSB((~A & ~B & C & D) & QBBoperations.lastRank);// 0xFF00000000000000UL);
           BitBoard rookPos = 1UL << (int)rookSq;
           rookPos = rookPos == 288230376151711744 ? 0 : rookPos | 288230376151711744;
@@ -183,8 +186,11 @@ namespace Ceres.Chess.MoveGen
         }
         else if (M.CastleLong)
         {
-          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
-          kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          //BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
+          //kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          ulong kingToSq = 2305843009213693952; //c8 in decimals
+          ulong kingIdx = 61; //c8 represented as index from h1..a8
+          BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;
           BitBoard rookSq = QBBoperations.MSB((~A & ~B & C & D) & QBBoperations.lastRank); //0xFF00000000000000UL);
           BitBoard rookPos = 1UL << (int)rookSq;
           rookPos = rookPos == 1152921504606846976 ? 0 : rookPos | 1152921504606846976;
@@ -235,8 +241,9 @@ namespace Ceres.Chess.MoveGen
           BitBoard rookSq = QBBoperations.LSB((~A & ~B & C & ~D) & QBBoperations.firstRank); //0x00000000000000FF);
           BitBoard rookPos = 1UL << (int)rookSq;
           rookPos = rookPos == 4 ? 0 : rookPos | 4;
-          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);           
-          kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          ulong kingToSq = 2; //g1 in decimals
+          ulong kingIdx = 1; //g1 represented as index from h1..a8
+          BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;          
           BitBoard kingAndRooks = kingPos | rookPos;
           if (rookPos == kingPos)
             kingAndRooks = 0;
@@ -261,8 +268,9 @@ namespace Ceres.Chess.MoveGen
           BitBoard rookSq = QBBoperations.MSB((~A & ~B & C & ~D) & QBBoperations.firstRank);
           BitBoard rookPos = 1UL << (int)rookSq;
           rookPos = rookPos == 16 ? 0 : rookPos | 16;
-          BitBoard kingPos = (1UL << (int)nFromSquare) | (1UL << (int)nToSquare);
-          kingPos = nFromSquare == nToSquare ? 0 : kingPos;
+          ulong kingToSq = 32; //c1 in decimals
+          ulong kingIdx = 5; //c1 represented as index from h1..a8
+          BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;
           var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
           if (rookPos == kingPos)
             kingAndRooks = 0;
