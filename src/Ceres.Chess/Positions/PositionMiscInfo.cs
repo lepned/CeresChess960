@@ -160,13 +160,7 @@ namespace Ceres.Chess
     /// en passant rights are present (if any).
     /// </summary>
     public char EnPassantFileChar => EPFileChars[(int)EnPassantFileIndex];
-
-    public readonly int WKRsquare; 
-    public readonly int WQRsquare; 
-    public readonly int BKRsquare; 
-    public readonly int BQRsquare; 
-
-
+    
     /// <summary>
     /// Returns a string representation.
     /// </summary>
@@ -298,19 +292,7 @@ namespace Ceres.Chess
       RepetitionCount = repetitionCount > 3 ? (byte)3 : (byte)repetitionCount;
       MoveNum = (short)moveNum;
     }
-
-    public PositionMiscInfo(bool whiteCanCastleOO, bool whiteCanCastleOOO,
-                            bool blackCanCastleOO, bool blackCanCastleOOO,
-                            SideType sideToMove, int move50Count, int repetitionCount,
-                            int moveNum, EnPassantFileIndexEnum enPassantColIndex, int wKRsquare, int wQRsquare, int bKRsquare, int bQRsquare)
-      : this(whiteCanCastleOO, whiteCanCastleOOO, blackCanCastleOO, blackCanCastleOOO,
-             sideToMove, move50Count, repetitionCount, moveNum, enPassantColIndex)
-    {
-      WKRsquare = wKRsquare;
-      WQRsquare = wQRsquare;
-      BKRsquare = bKRsquare;
-      BQRsquare = bQRsquare;
-    }
+   
     /// <summary>
     /// Tests for equality with another PositionMiscInfo
     /// (using chess semantics which implies that the MoveNum is irrelevant).

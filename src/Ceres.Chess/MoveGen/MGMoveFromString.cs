@@ -38,18 +38,21 @@ namespace Ceres.Chess.MoveGen
     /// <returns></returns>
     public static MGMove ParseMove(MGPosition pos, string moveStr)
     {
-      //if (moveStr == "e8g8")
-      //{
-
-      //}
       if (!TryParseMoveCoordinateOrAlgebraic(pos, moveStr, out MGMove move))
       {
         Position position = MGChessPositionConverter.PositionFromMGChessPosition(in pos);
         PositionWithMove mfp = SANParser.FromSAN(moveStr, in position);
-        return MGMoveConverter.MGMoveFromPosAndMove(in position, mfp.Move);
+
+        var m = MGMoveConverter.MGMoveFromPosAndMove(in position, mfp.Move);
+        System.Diagnostics.Debug.Assert(pos.IsLegalMove(m));
+        return m;
       }
       else
+      {
+        System.Diagnostics.Debug.Assert(pos.IsLegalMove(move));
         return move;
+      }
+        
     }
 
     /// <summary>
@@ -61,49 +64,28 @@ namespace Ceres.Chess.MoveGen
     /// <returns></returns>
     private static bool TryParseMoveCoordinateOrAlgebraic(MGPosition pos, string moveStr, out MGMove move)
     {
-      moveStr = moveStr.ToLower();
+      moveStr = moveStr.ToUpper();
 
       // Sometimes promotions to Knight use the "k" instead of expected "n"
-      if (moveStr.EndsWith("k"))
-        moveStr = moveStr.Substring(0, moveStr.Length - 1) + "n";
+      if (moveStr.EndsWith("K"))
+        moveStr = moveStr.Substring(0, moveStr.Length - 1) + "N";
 
       MGMoveList moves = new MGMoveList();
       MGMoveGen.GenerateMoves(in pos, moves);
-      char rank1 = moveStr[1];
-      char rank2 = moveStr[3];
-      var sameRank = rank1 == rank2;
-      if (moveStr == "e8g8")
-      {
-      }
+      
       foreach (MGMove moveTry in moves.MovesArray)
       {
-        if (moveTry.IsCastle && sameRank)
-        { 
-          var upper = moveStr.ToUpper();
-          string fromTo = $"{moveTry.FromSquare}{moveTry.ToSquare}";
- 
-          if (upper == fromTo)
-          {
-            move = moveTry;
-            return true;
-          }
-          //test normal chess
-         else if ((moveTry.CastleShort && upper == "E8G8") || (moveTry.CastleShort && upper == "E1G1") )
-          {
-            move = moveTry;
-            return true;
-          }
-          else if ((moveTry.CastleLong && upper == "E8C8") || (moveTry.CastleLong && upper == "E1C1"))
-          {
-            move = moveTry;
-            return true;
-          }
-
-        }
         // Accept moves in any of multiple formats, including Chess 960 (for castling variation)
         if (String.Equals(moveTry.MoveStr(MGMoveNotationStyle.LC0Coordinate), moveStr, StringComparison.OrdinalIgnoreCase)
          || String.Equals(moveTry.MoveStr(MGMoveNotationStyle.LC0Coordinate960Format), moveStr, StringComparison.OrdinalIgnoreCase)
          || String.Equals(moveTry.MoveStr(MGMoveNotationStyle.LongAlgebraic), moveStr, StringComparison.OrdinalIgnoreCase))
+        {
+          move = moveTry;
+          if(!move.IsCastle)
+            return true;
+        }
+
+        if (moveTry.IsCastle && $"{moveTry.FromSquare}{moveTry.ToSquare}" == moveStr)
         {
           move = moveTry;
           return true;

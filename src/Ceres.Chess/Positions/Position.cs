@@ -1216,7 +1216,7 @@ namespace Ceres.Chess
 
       // NOTE: use 2 for ply number so translates to 1 for move number
       PositionMiscInfo miscInfo = new PositionMiscInfo(true, true, true, true, SideType.White,
-                                                       0, 0, 2, PositionMiscInfo.EnPassantFileIndexEnum.FileNone, 0,7,56,63);
+                                                       0, 0, 2, PositionMiscInfo.EnPassantFileIndexEnum.FileNone);
       return new Position(pieces, in miscInfo);
     }
 

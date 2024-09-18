@@ -31,6 +31,8 @@ using Ceres.MCTS.Environment;
 using Ceres.APIExamples;
 using Ceres.Commands;
 using Ceres.Features;
+using Ceres.Chess.Textual;
+using Ceres.Chess.MoveGen;
 
 #endregion
 
@@ -44,10 +46,21 @@ namespace Ceres
     /// <param name="args"></param>
     static void Main(string[] args)
     {
-      Ceres.Chess.MoveGen.Test.MGMoveGenTest.Test();
-      Console.WriteLine("Done!");
-      return;
-      //LaunchUCI(args);
+      //var res = FENParser.ParseFEN("nbnqrkbr/p2ppp2/1p4p1/2p4p/3P3P/3N4/PPP1PPPR/NB1QRKB1 w Ehe - 0 9");
+      //Chess.MoveGen.Test.MGMoveGenTest.Test();
+      //Console.WriteLine("Done!");
+      //Ceres.Chess.Position pos = Ceres.Chess.Position.FromFEN("q1bnrbkr/pppn1ppp/3p4/4p3/2P2P2/8/PP1PPRPP/BBQNN1KR w Kkq - 2 4");
+      //MGPosition mgPos = pos.ToMGPosition;
+      //MGMoveList moves = new();
+      //MGMoveGen.GenerateMoves(in mgPos, moves);
+      //foreach (MGMove move in moves)
+      //{
+      //  Console.WriteLine(move);
+      //  //write from and to square to console
+      //  var msg = $"From: {move.FromSquare} To: {move.ToSquare}";
+      //  Console.WriteLine(msg);
+      //}
+      LaunchUCI(args);
     }
 
 

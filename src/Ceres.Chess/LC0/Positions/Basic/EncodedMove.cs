@@ -318,21 +318,15 @@ namespace Ceres.Chess.EncodedPositions.Basic
     static EncodedMove FromNeuralNetIndex(int index, bool pieceInfoWasAvailable, bool isPawnMove, bool isKingMove)
     {
       Debug.Assert(index >= 0 && index < EncodedPolicyVector.POLICY_VECTOR_LENGTH);
-      EncodedMove raw = new EncodedMove(nnIndicesToIndices[index]);
+      EncodedMove raw = new EncodedMove(nnIndicesToIndices[index]);      
+      //var tt = NEURAL_NET_MOVE_STR[index];      
       
-      //var tt = NEURAL_NET_MOVE_STR[index]; 
-      //FromTo fromToTest = CalcFromTo(raw.RawValue & (16384 - 1));      
-      //byte toSquareTest = fromToTest.To;
-      //ulong movedToRookSqTest = MGPositionConstants.rookMask & (1UL << toSquareTest);
-      //if (isKingMove && movedToRookSqTest != 0)
-      //{        
-      //}
       if (pieceInfoWasAvailable)
-      {
-        byte toSquare = CalcFromTo(raw.RawValue & (16384 - 1)).To;
-        ulong movedToRookSq = MGPositionConstants.rooksThatCanCastleMask & (1UL << toSquare);
-        if (isKingMove && movedToRookSq != 0) // castling
+      {        
+        if (raw.IsCastling)
+        { 
           return new EncodedMove((ushort)(raw.IndexPacked | MaskCastling));
+        }
         else if (isPawnMove && raw.ToSquare.Rank == 7) // promotion
         {
           char possiblePromoChar = NEURAL_NET_MOVE_STR[index][^1];

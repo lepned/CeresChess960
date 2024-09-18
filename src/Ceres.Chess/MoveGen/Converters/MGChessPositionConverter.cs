@@ -88,10 +88,6 @@ namespace Ceres.Chess.MoveGen.Converters
       pos.BlackCanCastle = position.MiscInfo.BlackCanOO;
       pos.WhiteCanCastleLong = position.MiscInfo.WhiteCanOOO;
       pos.BlackCanCastleLong = position.MiscInfo.BlackCanOOO;
-      pos.WhiteKingRookSquare = (short)position.MiscInfo.WKRsquare;
-      pos.WhiteQueenRookSquare = (short)position.MiscInfo.WQRsquare;
-      pos.BlackKingRookSquare = (short)position.MiscInfo.BKRsquare;
-      pos.BlackQueenRookSquare = (short)position.MiscInfo.BQRsquare;
 
       if (position.MiscInfo.EnPassantFileIndex != PositionMiscInfo.EnPassantFileIndexEnum.FileNone)
       {
@@ -192,7 +188,7 @@ namespace Ceres.Chess.MoveGen.Converters
       PositionMiscInfo miscInfo = new PositionMiscInfo(mgPos.WhiteCanCastle, mgPos.WhiteCanCastleLong,
                               mgPos.BlackCanCastle, mgPos.BlackCanCastleLong,
                               sideToMove, mgPos.Rule50Count, 0,
-                              mgPos.MoveNumber, enPassantColIndex, mgPos.WhiteKingRookSquare, mgPos.WhiteQueenRookSquare, mgPos.BlackKingRookSquare, mgPos.BlackQueenRookSquare);
+                              mgPos.MoveNumber, enPassantColIndex);
 
       pos.SetMiscInfo(miscInfo);
       pos.SetPieceCount(pieceCount);
@@ -239,27 +235,21 @@ namespace Ceres.Chess.MoveGen.Converters
             blackRookSquares.Add(ps.Square);          
         }
       }
-
-      //set rook positions
+            
       var miscInfo = fenParsed.MiscInfo;
-      pos.WhiteKingRookSquare = (short)miscInfo.WKRsquare;
-      pos.WhiteQueenRookSquare = (short)miscInfo.WQRsquare;
-      pos.BlackKingRookSquare = (short)miscInfo.BKRsquare;
-      pos.BlackQueenRookSquare = (short)miscInfo.BQRsquare;
-
+      
       // Check if the position is Chess960
-      if (whiteKingSquare != Square.FromFileAndRank(4, 0) || blackKingSquare != Square.FromFileAndRank(4, 7) ||
-          !whiteRookSquares.Contains(Square.FromFileAndRank(0, 0)) || !whiteRookSquares.Contains(Square.FromFileAndRank(7, 0)) ||
-          !blackRookSquares.Contains(Square.FromFileAndRank(0, 7)) || !blackRookSquares.Contains(Square.FromFileAndRank(7, 7)))
-      {
-        pos.IsChess960 = true;
-        MGPositionConstants.IsChess960 = true;
-      }
-      else
-      {
-        //pos.IsChess960 = false;
-        MGPositionConstants.IsChess960 = false;
-      }
+      //if (whiteKingSquare != Square.FromFileAndRank(4, 0) || blackKingSquare != Square.FromFileAndRank(4, 7) ||
+      //    !whiteRookSquares.Contains(Square.FromFileAndRank(0, 0)) || !whiteRookSquares.Contains(Square.FromFileAndRank(7, 0)) ||
+      //    !blackRookSquares.Contains(Square.FromFileAndRank(0, 7)) || !blackRookSquares.Contains(Square.FromFileAndRank(7, 7)))
+      //{
+      //  pos.IsChess960 = true;
+      //  MGPositionConstants.IsChess960 = true;
+      //}
+      //else
+      //{
+      //  MGPositionConstants.IsChess960 = false;
+      //}
 
       pos.Rule50Count = fenParsed.MiscInfo.Move50Count;
       pos.MoveNumber = fenParsed.MiscInfo.MoveNum;

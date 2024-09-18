@@ -4,7 +4,9 @@
 //using DJE.Base;
 using Ceres.Base;
 using Ceres.Base.Benchmarking;
+using Ceres.Chess.EncodedPositions.Basic;
 using Ceres.Chess.MoveGen.Converters;
+using Ceres.Chess.Textual.PgnFileTools;
 using Microsoft.FSharp.Data.UnitSystems.SI.UnitNames;
 using SharpCompress.Common;
 using System;
@@ -270,7 +272,7 @@ namespace Ceres.Chess.MoveGen.Test
     {
       var path = "C:/Dev/Chess/Chess960.txt"; //
       var records = ParseFile(path);
-      var ordered = records.OrderBy(r => GetDepthValue(depth, r));
+      var ordered = records; //records.OrderBy(r => GetDepthValue(depth, r));
       //RunPerftOnPosition("bbqrnnkr/1ppp1p1p/5p2/p5p1/P7/1P4P1/2PPPP1P/1BQRNNKR w HDhd - 0 9", 2, (ulong)23);
 
       foreach (var record in ordered)
@@ -294,8 +296,14 @@ namespace Ceres.Chess.MoveGen.Test
       //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3_195_901_860);
       //RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 3, 97862);
       //RunPerftWithStatsOnPosition("1qbrknrb/1p1ppppp/1np5/8/p4P1P/4P1N1/PPPP2P1/NQBRK1RB w GDgd - 0 9", 3, 10581);
-      RunPerftWithStatsOnPosition("nbkrbqrn/1pppppp1/8/4P2p/pP6/P7/2PP1PPP/NBRKBQRN w GC - 0 9", 3, 8475);
+      //RunPerftWithStatsOnPosition("bnqnrbkr/1pp2pp1/p7/3pP2p/4P1P1/8/PPPP3P/BNQNRBKR w HEhe d6 0 9", 1, 31);
+      //RunPerftWithStatsOnPosition("bnqnrbkr/1pp2pp1/p7/3pP2p/4P1P1/8/PPPP3P/BNQNRBKR w HEhe d6 0 9", 2, 984);
+      //RunPerftWithStatsOnPosition("bnqnrbkr/1pp2pp1/p7/3pP2p/4P1P1/8/PPPP3P/BNQNRBKR w HEhe d6 0 9", 3, 28677);
+      //RunPerftWithStatsOnPosition("bnqnrbkr/1pp2pp1/p7/3pP2p/4P1P1/8/PPPP3P/BNQNRBKR w HEhe d6 0 9", 4, 962591);
+      //RunPerftWithStatsOnPosition("bnqnrbkr/1pp2pp1/p7/3pP2p/4P1P1/8/PPPP3P/BNQNRBKR w HEhe d6 0 9", 5, 29032175);
+      //RunPerftWithStatsOnPosition("b1nbrknr/1qppp1pp/p4p2/1p6/6P1/P2NP3/1PPP1P1P/BQ1BRKNR w HEhe - 1 9", 5, 13157826);
       //RunPerftWithStatsOnPosition("bq1b1krn/pp1ppppp/3n4/2r5/3p3N/6N1/PPP1PPPP/BQRB1KR1 w GCg - 2 9", 3, 18571);
+      RunPerftWithStatsOnPosition("q2br1kr/p1pn1pp1/3p1n1p/3Pp2P/2P5/4N2R/P2NPPP1/BbQR2K1 w k - 0 13", 4, 1577714);
       if (false)
       {
         //RunPerftOnPosition("r1krnnbq/pp1ppp1p/6p1/2p5/2P5/P3P3/Rb1P1PPP/1BKRNNBQ w Dda - 0 9", 2, 61);
@@ -330,13 +338,13 @@ namespace Ceres.Chess.MoveGen.Test
 
       //RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", 5, 9_771_632);     // DJE test (initial position after e4, test en passant)
 
-      RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 5, 193_690_690);  // Position 2: 'Kiwipete' position
-      RunPerftOnPosition("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0", 7, 178_633_661);                // Position 3
+      RunPerftWithStatsOnPosition("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 5, 89_941_194);       // Position 5
       RunPerftWithStatsOnPosition("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", 6, 706_045_033);   // Position 4
+      RunPerftWithStatsOnPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 25", 5, 193_690_690);  // Position 2: 'Kiwipete' position
+      RunPerftWithStatsOnPosition("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 0", 7, 178_633_661);                // Position 3
       //System.Environment.Exit(3);
 
       RunPerftWithStatsOnPosition("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1", 6, 706_045_033);   // Position 4 Mirrored (should be same score as previous)
-      RunPerftWithStatsOnPosition("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 5, 89_941_194);       // Position 5
       RunPerftWithStatsOnPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7, 3_195_901_860);        // Position 1: Initial Position
       // too slow dumpPerftScoreFfromFEN("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", 7, 287188994746); // Position 6 28/1/2016: Correct (took 8_454_195 ms)
 
@@ -583,9 +591,33 @@ namespace Ceres.Chess.MoveGen.Test
         MGMoveList movesNextDepth = new MGMoveList(128);
         for (int i = 0; i < movesThisDepth.NumMovesUsed; i++)
         {
+          MGMove m = movesThisDepth.MovesArray[i];          
           MGPosition Q = new MGPosition(P);
-          var m = movesThisDepth.MovesArray[i];          
+          //var qBoard = Q.BoardString;
+          //Position p = Q.ToPosition;
+          ////var pBoard = p.BoardPicture;
+          //EncodedMove encodedMove = ConverterMGMoveEncodedMove.MGChessMoveToEncodedMove(m);          
+          //MGMove convertedMGMove = ConverterMGMoveEncodedMove.EncodedMoveToMGChessMove(encodedMove, in Q);
+          //if(convertedMGMove != m)
+          //{
+          //  new Exception("Move conversion failed");
+          //}
+          //Move move = MGMoveConverter.ToMove(m);
+          //MGMove mgMove = MGMoveConverter.MGMoveFromPosAndMove(in p, move);
+
+          //if(mgMove != m)
+          //{
+          //  new Exception("Move conversion failed");
+          //}
+          //if (p != Q.ToPosition)
+          //{
+          //  new Exception("Position conversion failed");
+          //}
           Q.MakeMove(m);
+          //var qBoard2 = Q.BoardString;
+          //if (qBoard == qBoard2)
+          //{            
+          //}
           PerftCollect(in Q, maxdepth, depth + 1, movesNextDepth, ref nodeCount, ref castleCount, ref captures);
         }
       }
