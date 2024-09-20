@@ -141,7 +141,7 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        BitBoard BlackKing = A & B & C & D;
+        //BitBoard BlackKing = A & B & C & D;
         bool inCheck = MGMoveGen.IsBlackInCheck(A, B, C, D);
         if (inCheck)
         {
@@ -151,9 +151,6 @@ namespace Ceres.Chess.MoveGen
         ulong mask = ~kingStart;
 
         kingStart = moveKing;
-
-        // Create a mask that clears the target position and then sets the new king position
-        int kingSqNew = moveLeft ? kingSq + 1 : kingSq - 1;
 
         // Apply the mask to each bitboard
         A = (A & mask) | moveKing;
@@ -196,7 +193,7 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        BitBoard WhiteKing = A & B & C & ~D;
+        //BitBoard WhiteKing = A & B & C & ~D;
         var inCheck = MGMoveGen.IsWhiteInCheck(A, B, C, D);
         if (inCheck)
         {
@@ -206,9 +203,6 @@ namespace Ceres.Chess.MoveGen
         ulong mask = ~kingStart; //| moveKing;
 
         kingStart = moveKing; //moveLeft ? kingStart << 1 : kingStart >> 1;
-
-        // Create a mask that clears the target position and then sets the new king position
-        int kingSqNew = moveLeft ? kingSq + 1 : kingSq - 1;
 
         // Apply the mask to each bitboard
         A = (A & mask) | moveKing;

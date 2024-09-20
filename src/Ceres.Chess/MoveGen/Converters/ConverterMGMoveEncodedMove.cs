@@ -104,7 +104,6 @@ namespace Ceres.Chess.MoveGen.Converters
         return CalcFromTo(thisMove.RawValue & (16384 - 1));
     }
 
-
     public static MGMove EncodedMoveToMGChessMove(EncodedMove thisMove, in MGPosition position)
     {
       MGMove moveMG = DoEncodedMoveToMGChessMove(thisMove, in position);
@@ -131,21 +130,19 @@ namespace Ceres.Chess.MoveGen.Converters
       FromTo fromTo = CalcFromTo(thisMove.RawValue & (16384 - 1));
       byte fromSquare = fromTo.From;
       byte toSquare = fromTo.To;
-
-      //var tKings = position.ToPosition;
-      //Debug.Assert(tKings.PieceExists(Pieces.WhiteKing) && tKings.PieceExists(Pieces.BlackKing));
+      bool blackToMove = position.BlackToMove;
       PieceType pieceMoving = position.PieceMoving(thisMove);
-      ulong movedToRookSq = position.BlackToMove ? QBBoperations.GetBlackRooksMask(in position) & (1UL << toSquare) : QBBoperations.GetWhiteRooksMask(in position) & (1UL << toSquare);
-      bool kingDidCastle = (movedToRookSq != 0 && pieceMoving == PieceType.King) || thisMove.IsCastling;
+      MCChessPositionPieceEnum rawPieceAtToSquare = position.PieceCapturingRaw(thisMove);
+
+      var performedCastling = 
+        pieceMoving == PieceType.King && 
+        ((blackToMove && rawPieceAtToSquare == MCChessPositionPieceEnum.BlackRook) || (!blackToMove && rawPieceAtToSquare == MCChessPositionPieceEnum.WhiteRook));
+      
       if (pieceMoving == PieceType.None)
       {
         throw new Exception("Illegal move " + thisMove + " in position " + position.ToPosition.FEN);
       }
       PieceType pieceCapture = position.PieceCapturing(thisMove);
-
-      MCChessPositionPieceEnum rawPieceAtToSquare = position.PieceCapturingRaw(thisMove);
-
-      bool blackToMove = position.BlackToMove;
       MCChessPositionPieceEnum pieceMG = PieceToMGPiece(pieceMoving, blackToMove);
       int pieceMGFlags = (int)pieceMG << MGMove.PIECE_SHIFT;
       int captureFlag = 0;     
@@ -181,34 +178,18 @@ namespace Ceres.Chess.MoveGen.Converters
       }
       else
       {
-        //bool castlingLegal = position.BlackToMove ? position.BlackCanCastle || position.BlackCanCastleLong : position.WhiteCanCastle || position.WhiteCanCastleLong;
-       
-        if (thisMove.IsCastling)
+        if (performedCastling)
         {
-          int castlingPart = 0;
+          int castlingPart;
           if (toSquare < fromSquare)
-          {           
-            if (position.BlackToMove)
-            {
-              castlingPart = (int)MGMove.MGChessMoveFlags.CastleShort;              
-            }            
-          }
+              castlingPart = (int)MGMove.MGChessMoveFlags.CastleShort;
           else
-          {           
-            if (position.BlackToMove)
-            {
-              castlingPart = (int)MGMove.MGChessMoveFlags.CastleLong;             
-            }           
-
-          }
-         
+              castlingPart = (int)MGMove.MGChessMoveFlags.CastleLong; 
+          
           Debug.Assert(castlingPart != 0);
           return new MGMove(fromSquare, toSquare, (MGMove.MGChessMoveFlags)(castlingPart | pieceMGFlags));
         }
-
-        // If the LZPositionMove happens to have the castling flag set,  make sure we agree
-        //Debug.Assert(!(thisMove.IsCastling && !isCastling));
-        //
+       
         // Check for double pawn move
         bool isDoublePawnMove = thisMove.FromSquare.IsRank2 && thisMove.ToSquare.IsRank4 && pieceMoving == PieceType.Pawn;
         MGMove.MGChessMoveFlags flagsDefault = isDoublePawnMove ? MGMove.MGChessMoveFlags.DoublePawnMove : 0;        
@@ -274,22 +255,16 @@ namespace Ceres.Chess.MoveGen.Converters
           Square sqFrom = squareMap[thisMove.FromSquareIndex];
           Square sqTo = squareMap[thisMove.ToSquareIndex];
 
-          var encodedMove = new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
-                                 new EncodedSquare(sqTo.SquareIndexStartA1), promotion, true);
-          var castle = new EncodedMove(thisMove.FromSquare.ToString(), thisMove.ToSquare.ToString(), EncodedMove.PromotionType.None, true);
-          Debug.Assert(castle == encodedMove);
-          return encodedMove;
+          return new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
+                                 new EncodedSquare(sqTo.SquareIndexStartA1), promotion, true);          
         }
         else if (thisMove.CastleLong)
         {
           Square sqFrom = squareMap[thisMove.FromSquareIndex];
           Square sqTo = squareMap[thisMove.ToSquareIndex];
 
-          var encodedMove = new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
+          return new EncodedMove(new EncodedSquare(sqFrom.SquareIndexStartA1),
                                  new EncodedSquare(sqTo.SquareIndexStartA1), promotion, true);
-          var castle = new EncodedMove(thisMove.FromSquare.ToString(), thisMove.ToSquare.ToString(), EncodedMove.PromotionType.None, true);
-          Debug.Assert(castle == encodedMove);
-          return encodedMove;
         }
         else if (thisMove.IsPromotion)
         {

@@ -148,20 +148,17 @@ namespace Ceres.Chess.MoveGen
 
       if ((byte)M.Piece == MGPositionConstants.BKING)
       {
-        BitBoard rooks = (~A & ~B & C & D) & QBBoperations.lastRank;
-        var rKSq = QBBoperations.LSB(rooks);
-        var rQSq = QBBoperations.MSB(rooks);
-        var rKMoved = nToSquare == rKSq && nToSquare < nFromSquare;
-        var rQMoved = nToSquare == rQSq && nToSquare > nFromSquare;
-        //Debug.Assert(rQMoved != rKMoved);
-
-        if (M.CastleShort && rKMoved)
+        var rookToSq = new Square((int)nToSquare, Square.SquareIndexType.BottomToTopRightToLeft);
+        var pieceToS = RawPieceAtSquare(rookToSq);
+        var performedCastling = pieceToS == MGPositionConstants.MCChessPositionPieceEnum.BlackRook;
+        
+        if (M.CastleShort && performedCastling)
         {
-          Debug.Assert(rQMoved != rKMoved);
+          Debug.Assert(M.ToString() == "O-O");
           ulong kingToSq = 144115188075855872; //g8 in decimals
           ulong kingIdx = 57; //g8 represented as index from h1..a1
           BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;
-          BitBoard rookPos = 1UL << (int)rKSq;
+          BitBoard rookPos = 1UL << (int)nToSquare;
           rookPos = rookPos == 288230376151711744 ? 0 : rookPos | 288230376151711744;
           var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
           if (rookPos == kingPos)
@@ -182,13 +179,13 @@ namespace Ceres.Chess.MoveGen
           Flags &= ~FlagsEnum.BlackCanCastleLong;
           return;
         }
-        else if (M.CastleLong && rQMoved)
+        else if (M.CastleLong && performedCastling)
         {
-          Debug.Assert(rQMoved != rKMoved);
+          Debug.Assert(M.ToString() == "O-O-O");
           ulong kingToSq = 2305843009213693952; //c8 in decimals
           ulong kingIdx = 61; //c8 represented as index from h1..a8
           BitBoard kingPos = nFromSquare == kingIdx ? 0 : (1UL << (int)nFromSquare) | kingToSq;
-          BitBoard rookPos = 1UL << (int)rQSq;
+          BitBoard rookPos = 1UL << (int)nToSquare;
           rookPos = rookPos == 1152921504606846976 ? 0 : rookPos | 1152921504606846976;
           kingPos = nFromSquare == nToSquare ? 0 : kingPos;
           var kingAndRooks = kingPos == rookPos ? 0 : kingPos | rookPos;
@@ -231,16 +228,14 @@ namespace Ceres.Chess.MoveGen
 
       else if ((byte)M.Piece == MGPositionConstants.WKING)
       {
-        BitBoard rooks = (~A & ~B & C & ~D) & QBBoperations.firstRank;
-        var rKSq = QBBoperations.LSB(rooks);
-        var rQSq = QBBoperations.MSB(rooks);
-        var rKMoved = nToSquare == rKSq && nToSquare < nFromSquare;
-        var rQMoved = nToSquare == rQSq && nToSquare > nFromSquare;
+        var rookToSq = new Square((int)nToSquare, Square.SquareIndexType.BottomToTopRightToLeft);
+        var pieceToS = RawPieceAtSquare(rookToSq);
+        var performedCastling = pieceToS == MGPositionConstants.MCChessPositionPieceEnum.WhiteRook;
         // White
-        if (M.CastleShort && rKMoved)
+        if (M.CastleShort && performedCastling)
         {
-          Debug.Assert(rQMoved != rKMoved);
-          BitBoard rookPos = 1UL << (int)rKSq;
+          Debug.Assert(M.ToString() == "O-O");
+          BitBoard rookPos = 1UL << (int)nToSquare;
           rookPos = rookPos == 4 ? 0 : rookPos | 4;
           ulong kingToSq = 2; //g1 in decimals
           ulong kingIdx = 1; //g1 represented as index from h1..a8
@@ -264,10 +259,10 @@ namespace Ceres.Chess.MoveGen
           return;
         }
 
-        if (M.CastleLong && rQMoved)
+        if (M.CastleLong && performedCastling)
         {
-          Debug.Assert(rQMoved != rKMoved);
-          BitBoard rookPos = 1UL << (int)rQSq;
+          Debug.Assert(M.ToString() == "O-O-O");
+          BitBoard rookPos = 1UL << (int)nToSquare;
           rookPos = rookPos == 16 ? 0 : rookPos | 16;
           ulong kingToSq = 32; //c1 in decimals
           ulong kingIdx = 5; //c1 represented as index from h1..a8
