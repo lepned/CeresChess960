@@ -64,60 +64,8 @@ using BitBoard = System.UInt64;
 
 namespace Ceres.Chess.MoveGen
 {
-
   public static class QBBoperations
   {
-    public const ulong firstRank = 0x00000000000000FFUL;
-    public const ulong lastRank = 0xFF00000000000000UL;
-
-
-    //rook, king
-    public static readonly ulong[,] ShortRookKingMask = {
-      { 0, 7, 7, 15, 31, 63, 127, 0 },
-      { 0, 0, 6, 14, 30, 62, 126, 0 },
-      { 0, 0, 0, 14, 30, 62, 126, 0 },
-      { 0, 0, 0, 0, 30, 62, 126, 0 },
-      { 0, 0, 0, 0, 0, 62, 126, 0 },
-      { 0, 0, 0, 0, 0, 0, 126, 0 },
-      { 0, 0, 0, 0, 0, 0, 0, 0 },
-      { 0, 0, 0, 0, 0, 0, 0, 0 },
-    };
-
-    public static readonly ulong[,] ShortRookKingMaskBlack = {
-      { 0, 504403158265495552, 504403158265495552, 1080863910568919040, 2233785415175766016, 4539628424389459968, 9151314442816847872, 0 },
-      { 0, 0, 432345564227567616, 1008806316530991104, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
-      { 0, 0, 0, 1008806316530991104, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
-      { 0, 0, 0, 0, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
-      { 0, 0, 0, 0, 0, 4467570830351532032, 9079256848778919936, 0 },
-      { 0, 0, 0, 0, 0, 0, 9079256848778919936, 0 },
-      { 0, 0, 0, 0, 0, 0, 0, 0 },
-      { 0, 0, 0, 0, 0, 0, 0, 0 },
-    };
-
-
-    //rook, king
-    public static readonly ulong[,] LongRookKingMask = {
-        { 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 62, 0, 0, 0, 0, 0, 0 },
-        { 0, 62, 60, 0, 0, 0, 0, 0 },
-        { 0, 62, 60, 56, 0, 0, 0, 0 },
-        { 0, 62, 60, 56, 48, 0, 0, 0 },
-        { 0, 126, 124, 120, 112, 112, 0, 0 },
-        { 0, 254, 252, 248, 240, 240, 240, 0 }
-    };
-
-    public static readonly ulong[,] LongRookKingMaskBlack = {
-        { 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 4467570830351532032, 0, 0, 0, 0, 0, 0 },
-        { 0, 4467570830351532032, 4323455642275676160, 0, 0, 0, 0, 0 },
-        { 0, 4467570830351532032, 4323455642275676160, 4035225266123964416, 0, 0, 0, 0 },
-        { 0, 4467570830351532032, 4323455642275676160, 4035225266123964416, 3458764513820540928, 0, 0, 0 },
-        { 0, 9079256848778919936, 8935141660703064064, 8646911284551352320, 8070450532247928832, 8070450532247928832, 0, 0 },
-        { 0, 18302628885633695744, 18158513697557839872, 17870283321406128128, 17293822569102704640, 17293822569102704640, 17293822569102704640, 0 }
-    };
-
     // Find the most significant bit
     public static ulong MSB(ulong bb) => 63UL ^ (ulong)BitOperations.LeadingZeroCount(bb);
 
@@ -141,7 +89,6 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        //BitBoard BlackKing = A & B & C & D;
         bool inCheck = MGMoveGen.IsBlackInCheck(A, B, C, D);
         if (inCheck)
         {
@@ -193,7 +140,6 @@ namespace Ceres.Chess.MoveGen
       int end = endSquare;
       while (end >= start)
       {
-        //BitBoard WhiteKing = A & B & C & ~D;
         var inCheck = MGMoveGen.IsWhiteInCheck(A, B, C, D);
         if (inCheck)
         {
@@ -219,9 +165,9 @@ namespace Ceres.Chess.MoveGen
     public static bool CanBlackKingReachLongRook(in MGPosition pos, out ulong rookPos)
     {
       var occ = pos.A | pos.B | pos.C;
-      ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
+      ulong bKing = (pos.D & pos.C & pos.B & pos.A) & MGPositionConstants.lastRank;
       int kingSq = (int)LSB(bKing);
-      ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
+      ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & MGPositionConstants.lastRank;
       int rookSq = (int)(MSB(bRooks));
       rookPos = 1UL << rookSq;
       if (bKing == 0 || bRooks == 0UL || kingSq > rookSq)
@@ -229,8 +175,8 @@ namespace Ceres.Chess.MoveGen
         return false;
       }
 
-      ulong occRow8WithoutKingAndRook = occ & lastRank & ~(1UL << kingSq | 1UL << rookSq);
-      var v = LongRookKingMaskBlack[rookSq - 56, kingSq - 56];
+      ulong occRow8WithoutKingAndRook = occ & MGPositionConstants.lastRank & ~(1UL << kingSq | 1UL << rookSq);
+      var v = MGPositionConstants.LongRookKingMaskBlack[rookSq - 56, kingSq - 56];
       var canCastle = v & occRow8WithoutKingAndRook;
 
       if (canCastle == 0UL)
@@ -254,18 +200,18 @@ namespace Ceres.Chess.MoveGen
     public static bool CanWhiteKingReachLongRook(in MGPosition pos, out ulong rookPos)
     {
       var occ = pos.A | pos.B | pos.C;  // Occupation(pos);
-      ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank;
+      ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & MGPositionConstants.firstRank;
       int kingSq = (int)LSB(wKing);
-      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;
-      int rookSq = (int)MSB((wRooks & firstRank));
+      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & MGPositionConstants.firstRank;
+      int rookSq = (int)MSB(wRooks);
       rookPos = 1UL << rookSq;
       if (wKing == 0 || wRooks == 0UL || kingSq > rookSq)
       {
         return false;
       }
 
-      ulong occRow1WithoutKingAndRook = occ & firstRank & ~(1UL << kingSq | 1UL << rookSq);
-      var v = LongRookKingMask[rookSq, kingSq];
+      ulong occRow1WithoutKingAndRook = occ & MGPositionConstants.firstRank & ~(1UL << kingSq | 1UL << rookSq);
+      var v = MGPositionConstants.LongRookKingMask[rookSq, kingSq];
       var canCastle = v & occRow1WithoutKingAndRook;
 
       if (canCastle == 0UL)
@@ -287,9 +233,9 @@ namespace Ceres.Chess.MoveGen
 
     public static bool CanBlackKingReachShortRook(in MGPosition pos, out ulong rookPos)
     {
-      ulong bKing = (pos.D & pos.C & pos.B & pos.A) & lastRank;
+      ulong bKing = (pos.D & pos.C & pos.B & pos.A) & MGPositionConstants.lastRank;
       int kingSq = (int)LSB(bKing);
-      ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
+      ulong bRooks = (pos.D & pos.C & ~pos.B & ~pos.A) & MGPositionConstants.lastRank;
       int rookSq = (int)(LSB(bRooks));
       rookPos = 1UL << rookSq;
       if (bKing == 0 || bRooks == 0UL || kingSq < rookSq)
@@ -298,8 +244,8 @@ namespace Ceres.Chess.MoveGen
       }
 
       var occ = pos.A | pos.B | pos.C;
-      ulong occRow1WithoutKingAndRook = occ & lastRank & ~(1UL << kingSq | 1UL << rookSq);
-      var v = ShortRookKingMaskBlack[rookSq - 56, kingSq - 56];
+      ulong occRow1WithoutKingAndRook = occ & MGPositionConstants.lastRank & ~(1UL << kingSq | 1UL << rookSq);
+      var v = MGPositionConstants.ShortRookKingMaskBlack[rookSq - 56, kingSq - 56];
       var canCastle = v & occRow1WithoutKingAndRook;
 
       if (canCastle == 0UL)
@@ -314,9 +260,9 @@ namespace Ceres.Chess.MoveGen
     public static bool CanWhiteKingReachShortRook(in MGPosition pos, out ulong rookPos)
     {
       var occ = pos.A | pos.B | pos.C;
-      ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & firstRank; // pos.B & pos.C; //GetKings(pos.A, pos.B, pos.C, pos.D);
+      ulong wKing = (~pos.D & pos.C & pos.B & pos.A) & MGPositionConstants.firstRank; // pos.B & pos.C; //GetKings(pos.A, pos.B, pos.C, pos.D);
       int kingSq = (int)LSB(wKing);
-      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;
+      ulong wRooks = (~pos.D & pos.C & ~pos.B & ~pos.A) & MGPositionConstants.firstRank;
       int rookSq = (int)(LSB(wRooks));
       rookPos = 1UL << rookSq;
       if (wKing == 0 || wRooks == 0UL || kingSq < rookSq)
@@ -324,8 +270,8 @@ namespace Ceres.Chess.MoveGen
         return false;
       }
 
-      ulong occRow1WithoutKingAndRook = occ & firstRank & ~(1UL << (kingSq) | 1UL << (rookSq));
-      var v = ShortRookKingMask[rookSq, kingSq];
+      ulong occRow1WithoutKingAndRook = occ & MGPositionConstants.firstRank & ~(1UL << (kingSq) | 1UL << (rookSq));
+      var v = MGPositionConstants.ShortRookKingMask[rookSq, kingSq];
       var canCastle = v & occRow1WithoutKingAndRook;
       if (canCastle == 0UL)
       {
@@ -334,91 +280,10 @@ namespace Ceres.Chess.MoveGen
 
       return false;
     }
-
-   
-    //public static ulong GetRooksMask(in MGPosition pos) => ((~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank) | ((pos.D & pos.C & ~pos.B & ~pos.A) & lastRank);
-    public static ulong GetWhiteRooksMask(in MGPosition pos) => (~pos.D & pos.C & ~pos.B & ~pos.A) & firstRank;
-    public static ulong GetBlackRooksMask(in MGPosition pos) => (pos.D & pos.C & ~pos.B & ~pos.A) & lastRank;
-
-    public static ulong GetKings(in MGPosition pos) => pos.C & pos.B & pos.A;
-    public static ulong GetBlackKing(in MGPosition pos) => pos.D & pos.C & pos.B & pos.A;
-    public static ulong GetWhiteKing(in MGPosition pos) => ~pos.D & pos.C & pos.B & pos.A;
-
-    public static int GetKingSquare(in MGPosition pos, bool isWhite)
-    {
-      if (isWhite)
-      {
-        var king = GetKings(pos) & firstRank;
-        return (int)LSB(king);
-      }
-      else
-      {
-        var king = GetKings(pos) & lastRank;
-        return (int)LSB(king);
-      }      
-    }
-    public static int GetBlackKingSideRookSquare(in MGPosition pos)
-    {
-      int square = -1;
-      if (pos.BlackCanCastle)
-      {
-        var rooks = GetBlackRooksMask(pos);
-        square = (int)LSB(rooks);
-      }
-
-      return square;
-    }
-
-    public static int GetWhiteKingSideRookSquare(in MGPosition pos)
-    {
-      int square = -1;
-      if (pos.WhiteCanCastle)
-      {
-        var rooks = GetWhiteRooksMask(pos);
-        square = (int)LSB(rooks);
-      }
-      return square;
-    }
-
-    public static int GetBlackQueenSideRookSquare(in MGPosition pos)
-    {
-      int rQsquare = -1;
-      if (pos.BlackCanCastleLong)
-      {
-        int kingSq = GetKingSquare(in pos, false);
-        var rooks = GetBlackRooksMask(pos);
-        rQsquare = (int)MSB(rooks);
-        if (rQsquare > kingSq )
-        {
-          return rQsquare;
-        }
-      }
-
-      return rQsquare;
-    }
-
-    public static int GetWhiteQueenSideRookSquare(in MGPosition pos)
-    {
-      int rQsquare = -1;
-      if (pos.WhiteCanCastleLong)
-      {
-        int kingSq = GetKingSquare(in pos, true);
-        var rooks = GetWhiteRooksMask(pos);
-        rQsquare = (int)MSB(rooks);
-        if (rQsquare < kingSq)
-        {
-          return rQsquare;
-        }
-      }
-      return rQsquare;
-    }
-
   }
 
   public static class MGPositionConstants
   {
-    //public static ulong rooksMask = 0; //normal chess start position for rooks in decimal
-    //public static ulong kingMask = 0; //normal chess start position for kings in decimal
     public static bool IsChess960 = true; //not used yet
 
     public const int MOVELIST_SIZE = 128;
@@ -573,6 +438,56 @@ namespace Ceres.Chess.MoveGen
     internal static int[] MoveKnight7SquareIndex;
 
     internal static int[] MoveKnight8SquareIndex;
+
+    public const ulong firstRank = 0x00000000000000FFUL;
+    public const ulong lastRank = 0xFF00000000000000UL;
+
+    //rook, king
+    public static readonly ulong[,] ShortRookKingMask = {
+      { 0, 7, 7, 15, 31, 63, 127, 0 },
+      { 0, 0, 6, 14, 30, 62, 126, 0 },
+      { 0, 0, 0, 14, 30, 62, 126, 0 },
+      { 0, 0, 0, 0, 30, 62, 126, 0 },
+      { 0, 0, 0, 0, 0, 62, 126, 0 },
+      { 0, 0, 0, 0, 0, 0, 126, 0 },
+      { 0, 0, 0, 0, 0, 0, 0, 0 },
+      { 0, 0, 0, 0, 0, 0, 0, 0 },
+    };
+
+    public static readonly ulong[,] ShortRookKingMaskBlack = {
+      { 0, 504403158265495552, 504403158265495552, 1080863910568919040, 2233785415175766016, 4539628424389459968, 9151314442816847872, 0 },
+      { 0, 0, 432345564227567616, 1008806316530991104, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
+      { 0, 0, 0, 1008806316530991104, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
+      { 0, 0, 0, 0, 2161727821137838080, 4467570830351532032, 9079256848778919936, 0 },
+      { 0, 0, 0, 0, 0, 4467570830351532032, 9079256848778919936, 0 },
+      { 0, 0, 0, 0, 0, 0, 9079256848778919936, 0 },
+      { 0, 0, 0, 0, 0, 0, 0, 0 },
+      { 0, 0, 0, 0, 0, 0, 0, 0 },
+    };
+
+
+    //rook, king
+    public static readonly ulong[,] LongRookKingMask = {
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 62, 0, 0, 0, 0, 0, 0 },
+        { 0, 62, 60, 0, 0, 0, 0, 0 },
+        { 0, 62, 60, 56, 0, 0, 0, 0 },
+        { 0, 62, 60, 56, 48, 0, 0, 0 },
+        { 0, 126, 124, 120, 112, 112, 0, 0 },
+        { 0, 254, 252, 248, 240, 240, 240, 0 }
+    };
+
+    public static readonly ulong[,] LongRookKingMaskBlack = {
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 4467570830351532032, 0, 0, 0, 0, 0, 0 },
+        { 0, 4467570830351532032, 4323455642275676160, 0, 0, 0, 0, 0 },
+        { 0, 4467570830351532032, 4323455642275676160, 4035225266123964416, 0, 0, 0, 0 },
+        { 0, 4467570830351532032, 4323455642275676160, 4035225266123964416, 3458764513820540928, 0, 0, 0 },
+        { 0, 9079256848778919936, 8935141660703064064, 8646911284551352320, 8070450532247928832, 8070450532247928832, 0, 0 },
+        { 0, 18302628885633695744, 18158513697557839872, 17870283321406128128, 17293822569102704640, 17293822569102704640, 17293822569102704640, 0 }
+    };
 
     [ModuleInitializer]
     internal static void ClassInitialize()

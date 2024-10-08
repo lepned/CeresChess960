@@ -286,7 +286,7 @@ namespace Ceres.Chess.MoveGen.Test
 
     public static void RunPerftSuite()
     {
-      RunChess960Verification(4);
+      RunChess960Verification(5);
       Console.WriteLine("Running PERFT Test Suite\n\n");
       //chess960 test
       //RunPerftOnPosition("qbb1rkrn/1ppppppp/p7/7n/8/P2P4/1PP1PPPP/QBBRNKRN w Gg - 0 9", 2, 547);

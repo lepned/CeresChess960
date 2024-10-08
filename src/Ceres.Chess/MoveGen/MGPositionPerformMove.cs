@@ -314,10 +314,10 @@ namespace Ceres.Chess.MoveGen
       // LOOK FOR FORFEITED CASTLING RIGHTS DUE to ROOK MOVES:
       else if ((byte)M.Piece == MGPositionConstants.BROOK)
       {
-        BitBoard rooks = (~A & ~B & C & D) & QBBoperations.lastRank;
+        BitBoard rooks = (~A & ~B & C & D) & MGPositionConstants.lastRank;
         var rKSq = QBBoperations.LSB(rooks);
         var rQSq = QBBoperations.MSB(rooks);
-        var bKingSquare = QBBoperations.LSB(QBBoperations.GetBlackKing(in this));
+        var bKingSquare = QBBoperations.LSB(D & C & B & A); //black king
         var rKMoved = nFromSquare == rKSq && bKingSquare > nFromSquare;
         var rQMoved = nFromSquare == rQSq && bKingSquare < nFromSquare;
        
@@ -353,16 +353,15 @@ namespace Ceres.Chess.MoveGen
 
       else if ((byte)M.Piece == MGPositionConstants.WROOK)
       {
-        BitBoard rooks = (~A & ~B & C & ~D) & QBBoperations.firstRank;
+        BitBoard rooks = (~A & ~B & C & ~D) & MGPositionConstants.firstRank;
         var rKSq = QBBoperations.LSB(rooks);
         var rQSq = QBBoperations.MSB(rooks);
-        var wKingSquare = QBBoperations.LSB(QBBoperations.GetWhiteKing(in this));
+        var wKingSquare = QBBoperations.LSB(~D & C & B & A);
         var rKMoved = nFromSquare == rKSq && wKingSquare > nFromSquare;
         var rQMoved = nFromSquare == rQSq && wKingSquare < nFromSquare;
         Debug.Assert((rQMoved && rKMoved) != true);
        
-        var kings = QBBoperations.GetKings(in this);
-        int pieceCode = GetPieceAtBitboardSquare(wKingSquare & QBBoperations.firstRank);
+        int pieceCode = GetPieceAtBitboardSquare(wKingSquare & MGPositionConstants.firstRank);
         PieceType pieceType = MGPieceCodeToPieceType[pieceCode];
 
         //if((1LL<<nFromSquare) & WHITEKRPOS)
